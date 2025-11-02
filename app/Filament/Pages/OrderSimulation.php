@@ -5,13 +5,17 @@ namespace App\Filament\Pages;
 use App\Models\Menu;
 use App\Models\Order;
 use App\Models\OrderItem;
+use Filament\Actions\Action;
 use Filament\Forms\Components;
-use Filament\Forms\Form;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 
-class OrderSimulation extends Page
+class OrderSimulation extends Page implements HasForms
 {
+    use InteractsWithForms;
+
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-beaker';
 
     protected static string | \UnitEnum | null $navigationGroup = 'Transactions';
@@ -28,55 +32,60 @@ class OrderSimulation extends Page
 
     public function mount(): void
     {
-        $this->form->fill();
+        $this->form->fill([
+            'customer_name' => 'Test Customer',
+            'payment_method' => 'cash',
+        ]);
     }
 
-    public function form(Form $form): Form
+    protected function getFormSchema(): array
     {
-        return $form
-            ->schema([
-                Components\Section::make('Simulation Configuration')
-                    ->schema([
-                        Components\TextInput::make('customer_name')
-                            ->label('Customer Name')
-                            ->default('Test Customer')
-                            ->required(),
-                        Components\Select::make('payment_method')
-                            ->label('Payment Method')
-                            ->options([
-                                'cash' => 'Cash',
-                                'debit' => 'Debit Card',
-                                'credit' => 'Credit Card',
-                                'e-wallet' => 'E-Wallet',
-                            ])
-                            ->default('cash')
-                            ->required()
-                            ->native(false),
-                        Components\Repeater::make('items')
-                            ->label('Order Items')
-                            ->schema([
-                                Components\Select::make('menu_id')
-                                    ->label('Menu Item')
-                                    ->options(Menu::pluck('name', 'id'))
-                                    ->required()
-                                    ->reactive()
-                                    ->searchable()
-                                    ->native(false),
-                                Components\TextInput::make('quantity')
-                                    ->label('Quantity')
-                                    ->numeric()
-                                    ->default(1)
-                                    ->minValue(1)
-                                    ->required(),
-                            ])
-                            ->columns(2)
-                            ->defaultItems(1)
-                            ->addActionLabel('Add Item')
-                            ->required()
-                            ->minItems(1),
-                    ])->columns(2),
-            ])
-            ->statePath('data');
+        return [
+            Components\Section::make('Simulation Configuration')
+                ->schema([
+                    Components\TextInput::make('customer_name')
+                        ->label('Customer Name')
+                        ->required()
+                        ->maxLength(255),
+                    Components\Select::make('payment_method')
+                        ->label('Payment Method')
+                        ->options([
+                            'cash' => 'Cash',
+                            'debit' => 'Debit Card',
+                            'credit' => 'Credit Card',
+                            'e-wallet' => 'E-Wallet',
+                        ])
+                        ->required()
+                        ->native(false),
+                    Components\Repeater::make('items')
+                        ->label('Order Items')
+                        ->schema([
+                            Components\Select::make('menu_id')
+                                ->label('Menu Item')
+                                ->options(Menu::pluck('name', 'id'))
+                                ->required()
+                                ->searchable()
+                                ->native(false),
+                            Components\TextInput::make('quantity')
+                                ->label('Quantity')
+                                ->numeric()
+                                ->default(1)
+                                ->minValue(1)
+                                ->required(),
+                        ])
+                        ->columns(2)
+                        ->defaultItems(1)
+                        ->addActionLabel('Add Item')
+                        ->required()
+                        ->minItems(1)
+                        ->columnSpanFull(),
+                ])->columns(2),
+        ];
+    }
+
+    protected function getFormStatePath(): ?string
+    {
+        return 'data';
     }
 
     public function simulateOrder(): void
@@ -117,7 +126,12 @@ class OrderSimulation extends Page
                 ->body("Order #{$order->id} created with total Rp " . number_format($total, 0, ',', '.'))
                 ->send();
 
-            $this->form->fill();
+            // Reset form
+            $this->form->fill([
+                'customer_name' => 'Test Customer',
+                'payment_method' => 'cash',
+                'items' => [],
+            ]);
         } catch (\Exception $e) {
             Notification::make()
                 ->title('Simulation Failed')
