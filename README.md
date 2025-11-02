@@ -3,7 +3,7 @@
 > **Prototipe Sistem Manajemen Inventori untuk Kafe**  
 > Laravel + Filament + PostgreSQL
 
-## 🎯 Tentang Proyek
+## Tentang Proyek
 
 Ini adalah **prototipe** aplikasi Point of Sale (POS) untuk kafe yang fokus pada **manajemen inventori** berbasis resep dengan logika pengurangan stok FIFO/FEFO. Prototipe ini dibangun menggunakan Laravel dan Filament untuk demonstrasi fungsi inti inventori.
 
@@ -24,7 +24,7 @@ Ini adalah **prototipe** aplikasi Point of Sale (POS) untuk kafe yang fokus pada
 ❌ Data Mining & Analytics  
 ❌ Integrasi Payment Gateway  
 
-## 🚀 Quick Start
+## Quick Start
 
 Lihat **[SETUP_GUIDE.md](SETUP_GUIDE.md)** untuk instruksi lengkap.
 
@@ -55,7 +55,7 @@ npm run dev
 - Email: `admin@example.com`
 - Password: `password`
 
-## 🎨 Fitur Utama
+## Fitur Utama
 
 ### 1. Manajemen Inventori
 - **Bahan Baku**: CRUD dengan unit, threshold stok rendah
@@ -76,7 +76,7 @@ Fitur unggulan prototipe ini:
 - **Transaction rollback**: Tidak ada perubahan jika ada error
 - **Detail notification**: Tampilkan ringkasan pengurangan stok
 
-## 📁 Struktur Penting
+## Struktur Penting
 
 ```
 app/
@@ -107,7 +107,7 @@ planning/                               # Dokumentasi arsitektur
 └── 04_indexeddb_schema.md
 ```
 
-## 🔄 Logika FIFO/FEFO
+## Logika FIFO/FEFO
 
 ```php
 // InventoryService::decreaseStockForOrder()
@@ -122,7 +122,7 @@ planning/                               # Dokumentasi arsitektur
 // 4. Gunakan DB Transaction untuk atomicity
 ```
 
-## 📊 Database Schema
+## Database Schema
 
 PostgreSQL dengan 8 tabel utama:
 - `roles`
@@ -136,7 +136,7 @@ PostgreSQL dengan 8 tabel utama:
 
 Lihat `planning/02_database_schema.dbml` untuk detail lengkap.
 
-## 🧪 Testing Workflow
+## Testing Workflow
 
 1. **Setup Bahan & Batch**
    - Tambah ingredient: Kopi, Susu, Gula
@@ -152,16 +152,16 @@ Lihat `planning/02_database_schema.dbml` untuk detail lengkap.
    - Klik "Simulasikan Pesanan"
    - Cek perubahan stok di batch (batch dengan expiry terdekat berkurang dulu)
 
-## 📚 Dokumentasi
+## Dokumentasi
 
 - **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Setup lengkap & troubleshooting
 - **planning/** - Requirements, database schema, class diagram
 
 ## 🛠 Tech Stack
 
-- **Backend**: PHP 8.2, Laravel 11
+- **Backend**: PHP 8.4, Laravel 12
 - **Admin Panel**: Filament 3
-- **Database**: PostgreSQL 15+
+- **Database**: PostgreSQL 18
 - **Frontend**: Vite, Tailwind CSS (via Filament)
 
 ## 📝 License
