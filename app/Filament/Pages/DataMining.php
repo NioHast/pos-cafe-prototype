@@ -14,9 +14,9 @@ class DataMining extends Page
 
     protected static ?int $navigationSort = 2;
 
-    protected static string $view = 'filament.pages.data-mining';
-
     protected static ?string $title = 'Data Mining & Analytics';
+
+    protected string $view = 'filament.pages.data-mining';
 
     public function getMockAssociationData(): array
     {

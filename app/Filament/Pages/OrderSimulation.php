@@ -20,9 +20,9 @@ class OrderSimulation extends Page
 
     protected static ?int $navigationSort = 4;
 
-    protected static string $view = 'filament.pages.order-simulation';
-
     protected static ?string $title = 'Order Simulation & Testing';
+
+    protected string $view = 'filament.pages.order-simulation';
 
     public ?array $data = [];
 
