@@ -24,6 +24,32 @@ Ini adalah **prototipe** aplikasi Point of Sale (POS) untuk kafe yang fokus pada
 ❌ Data Mining & Analytics  
 ❌ Integrasi Payment Gateway  
 
+## 📸 Screenshots
+
+### Dashboard
+![Dashboard](.github/screenshots/dashboard.png)
+*Admin dashboard dengan overview sistem*
+
+### Menu Management
+![Menu Management](.github/screenshots/menu.png)
+*Pengelolaan menu dengan resep dan harga*
+
+### Ingredients & Stock Management
+![Ingredients](.github/screenshots/ingredients.png)
+*Manajemen bahan baku dengan batch tracking FIFO/FEFO*
+
+### Order Processing
+![Orders](.github/screenshots/orders.png)
+*Simulasi pesanan dengan pengurangan stok otomatis*
+
+### User Management
+![Users](.github/screenshots/users.png)
+*Manajemen user dengan role-based access*
+
+### Waste Records
+![Waste Records](.github/screenshots/waste_records.png)
+*Pencatatan bahan yang terbuang atau kadaluarsa*
+
 ## Quick Start
 
 Lihat **[SETUP_GUIDE.md](SETUP_GUIDE.md)** untuk instruksi lengkap.
