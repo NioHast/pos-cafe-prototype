@@ -1,0 +1,44 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+/* Custom Filament Styles */
+
+/* Ubah background body */
+.fi-body {
+    @apply bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800;
+}
+
+/* Ubah background sidebar */
+.fi-sidebar {
+    @apply bg-white/80 backdrop-blur-sm dark:bg-gray-800/80;
+}
+
+/* Ubah warna header */
+.fi-topbar {
+    @apply bg-white/90 backdrop-blur-md shadow-lg dark:bg-gray-800/90;
+}
+
+/* Custom button styles */
+.fi-btn-primary {
+    @apply shadow-lg hover:shadow-xl transition-all duration-200;
+}
+
+/* Card dengan shadow lebih nice */
+.fi-section {
+    @apply shadow-md hover:shadow-lg transition-shadow duration-200;
+}
+
+/* Table row hover effect */
+.fi-ta-row:hover {
+    @apply bg-indigo-50 dark:bg-indigo-900/20;
+}
+

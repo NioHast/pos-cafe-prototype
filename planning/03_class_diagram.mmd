@@ -1,0 +1,383 @@
+classDiagram
+    direction LR
+
+    %% --- CORE TABLES (PENGGUNA & AKSES) ---
+    
+    class User {
+        +int id
+        +string name
+        +string email
+        +string password_hash
+        +int role_id
+        +datetime created_at
+        +datetime updated_at
+        +datetime deleted_at
+        +login()
+        +logout()
+        +resetPassword()
+        +hasRole(string roleName)
+        +can(string permission)
+    }
+
+    class Role {
+        +int id
+        +string name
+        +string description
+    }
+
+    class StudentProfile {
+        +int id
+        +int user_id
+        +string student_id
+        +string faculty
+        +string major
+        +int year
+    }
+    
+    class CashierSession {
+        +int id
+        +int user_id
+        +datetime shift_start
+        +datetime shift_end
+        +numeric total_sales
+        +int total_transactions
+        +startShift()
+        +endShift()
+        +recordSale(numeric amount)
+    }
+    
+    class UserResetToken {
+        +int id
+        +int user_id
+        +string token
+        +datetime expires_at
+        +boolean used
+    }
+
+    %% --- CORE TABLES (MENU & INVENTARIS) ---
+
+    class Category {
+      +int id
+      +string name
+      +datetime deleted_at
+    }
+
+    class Menu {
+        +int id
+        +string name
+        +string description
+        +numeric price
+        +numeric student_price
+        +string status
+        +int category_id
+        +MenuIngredient[] ingredients
+        +datetime created_at
+        +datetime updated_at
+        +datetime deleted_at
+        +getEffectivePrice(User customer) : numeric
+        +isAvailable() : boolean
+        +calculateCost() : numeric
+    }
+
+    class Ingredient {
+        +int id
+        +string name
+        +string unit
+        +int low_stock_threshold
+        +datetime created_at
+        +datetime updated_at
+        +datetime deleted_at
+        +getTotalStock() : numeric
+        +decreaseStock(numeric quantity)
+    }
+
+    class IngredientBatch {
+        +int id
+        +int ingredient_id
+        +numeric quantity
+        +date expiry_date
+        +datetime received_at
+        +numeric cost_per_unit
+    }
+
+    class MenuIngredient {
+        +int id
+        +int menu_id
+        +int ingredient_id
+        +numeric quantity_used
+    }
+    
+    class WasteRecord {
+        +int id
+        +int ingredient_id
+        +numeric quantity
+        +string reason
+        +int recorded_by
+        +datetime created_at
+    }
+
+    %% --- CORE TABLES (TRANSAKSI) ---
+
+    class Order {
+        +int id
+        +int customer_id
+        +int cashier_id
+        +numeric total_price
+        +string payment_status
+        +string payment_method
+        +OrderItem[] items
+        +AppliedPromotion[] appliedPromotions
+        +datetime created_at
+        +datetime updated_at
+        +addItem(Menu menu, int quantity, User preparedBy)
+        +calculateTotal()
+        +applyPromotion(Promotion promo)
+        +finalizePayment(string method)
+    }
+
+    class OrderItem {
+        +int id
+        +int order_id
+        +int menu_id
+        +int quantity
+        +numeric price_at_transaction
+        +int handled_by
+    }
+    
+    %% --- FITUR TAMBAHAN (PROMOSI & JADWAL) ---
+    
+    class Promotion {
+        +int id
+        +string name
+        +string description
+        +string type
+        +numeric value
+        +datetime start_date
+        +datetime end_date
+        +boolean is_active
+        +PromotionRule[] rules
+        +isApplicable(Order order) : boolean
+        +calculateDiscount(Order order) : numeric
+    }
+    
+    class PromotionRule {
+        +int promotion_id
+        +string applicable_type
+        +int applicable_id
+    }
+    
+    class AppliedPromotion {
+        +int id
+        +int order_id
+        +int promotion_id
+        +numeric amount_saved
+    }
+
+    class AnalyticsSchedule {
+      +int id
+      +string task_name
+      +string frequency
+      +time run_at_time
+      +datetime next_run_at
+      +boolean is_active
+      +updateNextRunTime()
+    }
+    
+    %% --- TABEL ANALITIK / DATA MINING ---
+    
+    class AnalyticsRun {
+        +int id
+        +string run_type
+        +datetime started_at
+        +datetime finished_at
+        +string status
+        +string description
+        +AssociationRule[] associationResults
+        +KmeansCluster[] clusterResults
+        +ClassificationResult[] classificationResults
+        +EstimationResult[] estimationResults
+        Examples
+        +PredictionModel[] predictionModels
+    }
+    
+    class AssociationRule {
+        +int id
+        +int run_id
+        +string antecedent
+        +string consequent
+        +numeric support
+        +numeric confidence
+        +numeric lift
+    }
+    
+    class KmeansCluster {
+        +int id
+        +int run_id
+        +int cluster_id
+        +string cluster_label
+        +jsonb centroid
+        +int num_points
+    }
+    
+    class MenuClusterAssignment {
+        +int run_id
+        +int menu_id
+        +int cluster_id
+    }
+    
+    class ClassificationResult {
+        +int id
+        +int run_id
+        +date classification_date
+        +string predicted_level
+        +string actual_level
+    }
+    
+    class EstimationResult {
+        +int id
+        +int run_id
+        +date estimation_date
+        +numeric estimated_revenue
+        +numeric actual_revenue
+    }
+    
+    class PredictionModel {
+        +int id
+        +int run_id
+        +string model_name
+        +string algorithm
+        +jsonb parameters
+        +numeric f1_score
+        +datetime created_at
+    }
+    
+    class Prediction {
+        +int id
+        +int model_id
+        +int prediction_target_id
+        +jsonb input_data
+        +string predicted_value
+        +string actual_value
+        +datetime created_at
+    }
+
+    %% --- TABEL TAMBAHAN (PIUTANG & LAPORAN) ---
+    
+    class Debt {
+        +int id
+        +string debtor_name
+        +string contact_info
+        +numeric total_amount
+        +date due_date
+        +string status
+        +datetime created_at
+        +datetime updated_at
+    }
+    
+    class FinancialReport {
+        +int id
+        +date period_start
+        +date period_end
+        +numeric total_income
+        +numeric total_expense
+        +numeric net_profit
+        +datetime generated_at
+    }
+
+
+    %% --- FRONTEND CLASSES (IndexedDB Representation) ---
+    
+    class OfflineMenu {
+        +int id
+        +string name
+        +numeric price
+        +numeric student_price
+        +int category_id
+        +object[] recipe
+    }
+    
+    class OfflineCategory {
+        +int id
+        +string name
+    }
+    
+    class OfflineIngredientStock {
+        +int ingredient_id
+        +string name
+        +numeric quantity
+        +getLocalStock() : numeric
+        +decreaseLocalStock(numeric amount)
+    }
+    
+    class OfflinePromotion {
+        +int id
+        +string name
+        +string type
+        +numeric value
+        +object[] rules
+    }
+    
+    class CurrentUser {
+        +int id
+        +string name
+        +string role
+    }
+    
+    class TransactionQueueItem {
+        +int id
+        +string uuid
+        +datetime created_at
+        +object payload
+        +markAsSynced()
+    }
+    
+    class SyncService {
+        +syncDown()
+        +syncUp()
+        +checkOnlineStatus() : boolean
+    }
+
+
+    %% --- Relationships (Telah Diperbaiki) ---
+    
+    Role "1" -- "*" User : "defines"
+    User "1" -- "0..1" StudentProfile : "has profile"
+    User "1" -- "*" CashierSession : "has sessions"
+    User "1" -- "*" Order : "places/handles"
+    User "1" -- "*" OrderItem : "prepares"
+    User "1" -- "*" WasteRecord : "records"
+    User "1" -- "*" UserResetToken : "has"
+    
+    Category "1" -- "*" Menu : "contains"
+    
+    Menu "1" -- "*" MenuIngredient : "uses"
+    Ingredient "1" -- "*" MenuIngredient : "is used in"
+    Ingredient "1" -- "*" IngredientBatch : "has batches"
+    Ingredient "1" -- "*" WasteRecord : "can be wasted"
+    
+    Order "1" o-- "*" OrderItem : "contains (composition)"
+    Menu "1" -- "*" OrderItem : "is item in"
+    
+    Order "1" -- "*" AppliedPromotion : "applies"
+    Promotion "1" -- "*" AppliedPromotion : "is applied"
+    Promotion "1" o-- "*" PromotionRule : "has rules (composition)"
+    
+    AnalyticsRun "1" -- "*" AssociationRule : "generates"
+    AnalyticsRun "1" -- "*" KmeansCluster : "generates"
+    AnalyticsRun "1" -- "*" ClassificationResult : "generates"
+    AnalyticsRun "1" -- "*" EstimationResult : "generates"
+    AnalyticsRun "1" -- "*" PredictionModel : "trains"
+    PredictionModel "1" -- "*" Prediction : "makes"
+    
+    KmeansCluster "1" -- "*" MenuClusterAssignment : "assigns"
+    Menu "1" -- "*" MenuClusterAssignment : "is assigned to"
+    
+    %% --- Frontend Logic ---
+    SyncService ..> TransactionQueueItem : "manages queue"
+    SyncService ..> OfflineMenu : "updates cache"
+    SyncService ..> OfflineCategory : "updates cache"
+    SyncService ..> OfflineIngredientStock : "updates cache"
+    SyncService ..> OfflinePromotion : "updates cache"
+    SyncService ..> CurrentUser : "updates cache"
+    
+    TransactionQueueItem ..> Order : "represents offline"

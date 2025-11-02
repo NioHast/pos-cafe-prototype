@@ -1,0 +1,276 @@
+////////////////////////////////////////////////////////////////////////////////
+// DBML Schema for Smart POS Cafe
+// Version: 2.0 (Final)
+// Description: Skema ini mencakup semua fitur yang didiskusikan:
+// - Manajemen Pengguna & Peran yang Disederhanakan
+// - Manajemen Stok & Menu yang Rinci
+// - Sistem Transaksi Fleksibel
+// - Fitur Promosi & Penjadwalan
+// - Pencatatan Hasil Analitik Data Mining yang Lengkap
+////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////
+// 💎 CORE TABLES (PENGGUNA & AKSES)
+/////////////////////////////////////////////////////////////
+
+Table roles {
+  id serial [pk]
+  name varchar [unique, note: "Contoh: 'admin', 'cashier', 'student'"]
+}
+
+Table users {
+  id serial [pk]
+  name varchar
+  email varchar [unique]
+  password varchar
+  role_id int [ref: > roles.id, note: 'Foreign key ke tabel roles']
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp [null, note: 'Untuk soft delete. Jika terisi, user dianggap tidak aktif.']
+}
+
+Table student_profiles {
+  id serial [pk]
+  user_id int [ref: > users.id, unique]
+  student_id varchar [unique, note: 'NIM Mahasiswa']
+  faculty varchar
+  major varchar
+  year int
+  created_at timestamp
+}
+
+Table cashier_sessions {
+  id serial [pk]
+  user_id int [ref: > users.id]
+  shift_start timestamp
+  shift_end timestamp [null]
+  total_sales numeric
+  total_transactions int
+}
+
+Table user_reset_tokens {
+  id serial [pk]
+  user_id int [ref: > users.id]
+  token varchar
+  expires_at timestamp
+  used boolean
+}
+
+/////////////////////////////////////////////////////////////
+// 🍽 CORE TABLES (MENU & INVENTARIS)
+/////////////////////////////////////////////////////////////
+
+Table categories {
+  id serial [pk]
+  name varchar [unique]
+  deleted_at timestamp [null]
+}
+
+Table menu {
+  id serial [pk]
+  name varchar
+  description text
+  price numeric [note: 'Harga normal']
+  student_price numeric [null, note: 'Harga khusus jika pelanggan adalah mahasiswa']
+  status varchar [default: 'available', note: "Contoh: 'available', 'sold_out'"]
+  category_id int [ref: > categories.id]
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp [null]
+}
+
+Table ingredients {
+  id serial [pk]
+  name varchar
+  unit varchar [note: "Contoh: 'gram', 'ml', 'pcs'"]
+  low_stock_threshold int
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp [null]
+}
+
+Table ingredient_batches {
+  id serial [pk]
+  ingredient_id int [ref: > ingredients.id]
+  quantity numeric [note: 'Jumlah stok yang masuk pada batch ini']
+  expiry_date date
+  received_at timestamp
+  cost_per_unit numeric
+}
+
+Table menu_ingredients {
+  id serial [pk]
+  menu_id int [ref: > menu.id]
+  ingredient_id int [ref: > ingredients.id]
+  quantity_used numeric [note: 'Jumlah bahan yang dibutuhkan per porsi menu']
+}
+
+Table waste_records {
+  id serial [pk]
+  ingredient_id int [ref: > ingredients.id]
+  quantity numeric
+  reason text
+  recorded_by int [ref: > users.id]
+  created_at timestamp
+}
+
+/////////////////////////////////////////////////////////////
+// 💳 CORE TABLES (TRANSAKSI)
+/////////////////////////////////////////////////////////////
+
+Table orders {
+  id serial [pk]
+  customer_id int [ref: > users.id, null, note: 'Pelanggan login, null jika anonim']
+  cashier_id int [ref: > users.id, note: 'Staf (cashier) yang memproses transaksi']
+  total_price numeric
+  payment_status varchar [note: "ENUM: 'pending', 'paid', 'failed', 'refunded'"]
+  payment_method varchar
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table order_items {
+  id serial [pk]
+  order_id int [ref: > orders.id]
+  menu_id int [ref: > menu.id]
+  quantity int
+  price_at_transaction numeric [note: 'Harga menu saat pembelian']
+  handled_by int [ref: > users.id, note: 'Staf (cashier) yang membuat item ini']
+}
+
+/////////////////////////////////////////////////////////////
+// 🚀 FITUR TAMBAHAN (PROMOSI & JADWAL)
+/////////////////////////////////////////////////////////////
+
+Table promotions {
+  id serial [pk]
+  name varchar
+  description text
+  type varchar [note: "'percentage', 'fixed_amount', 'bundle'"]
+  value numeric
+  start_date timestamp
+  end_date timestamp
+  is_active boolean [default: true]
+}
+
+Table promotion_rules {
+  promotion_id int [ref: > promotions.id]
+  applicable_type varchar [note: "'menu', 'category'"]
+  applicable_id int [note: 'Merujuk ke menu.id atau categories.id']
+}
+
+Table applied_promotions {
+  id serial [pk]
+  order_id int [ref: > orders.id]
+  promotion_id int [ref: > promotions.id]
+  amount_saved numeric
+}
+
+Table analytics_schedules {
+  id serial [pk]
+  task_name varchar [unique]
+  frequency varchar [note: "'daily', 'weekly', 'monthly'"]
+  run_at_time time [note: "Contoh: '02:00:00'"]
+  next_run_at timestamp
+  is_active boolean [default: true]
+}
+
+/////////////////////////////////////////////////////////////
+// 🧮 TABEL ANALITIK / DATA MINING
+/////////////////////////////////////////////////////////////
+
+Table analytics_runs {
+  id serial [pk]
+  run_type varchar [note: "'association', 'clustering', 'prediction', 'estimation', 'classification'"]
+  started_at timestamp
+  finished_at timestamp
+  status varchar [note: "'completed', 'failed', 'running'"]
+  description text
+}
+
+Table association_rules {
+  id serial [pk]
+  run_id int [ref: > analytics_runs.id]
+  antecedent text [note: 'Item A']
+  consequent text [note: 'Item B']
+  support numeric
+  confidence numeric
+  lift numeric
+}
+
+Table kmeans_clusters {
+  id serial [pk]
+  run_id int [ref: > analytics_runs.id]
+  cluster_id int
+  cluster_label varchar [note: "'Laris', 'Sedang', 'Tidak Laris'"]
+  centroid jsonb
+  num_points int [note: 'Jumlah menu dalam cluster ini']
+}
+
+Table menu_cluster_assignments {
+  run_id int [ref: > analytics_runs.id]
+  menu_id int [ref: > menu.id]
+  cluster_id int [ref: > kmeans_clusters.id]
+  Note: 'Primary key komposit (run_id, menu_id)'
+}
+
+Table classification_results {
+  id serial [pk]
+  run_id int [ref: > analytics_runs.id]
+  classification_date date
+  predicted_level varchar [note: "'ramai', 'sedang', 'sepi'"]
+  actual_level varchar [null]
+}
+
+Table estimation_results {
+  id serial [pk]
+  run_id int [ref: > analytics_runs.id]
+  estimation_date date
+  estimated_revenue numeric
+  actual_revenue numeric [null]
+}
+
+Table prediction_models {
+  id serial [pk]
+  run_id int [ref: > analytics_runs.id]
+  model_name varchar
+  algorithm varchar
+  parameters jsonb
+  f1_score numeric
+  created_at timestamp
+}
+
+Table predictions {
+  id serial [pk]
+  model_id int [ref: > prediction_models.id]
+  prediction_target_id int [note: 'Contoh: menu_id untuk prediksi penjualan menu']
+  input_data jsonb
+  predicted_value varchar
+  actual_value varchar [null]
+  created_at timestamp
+}
+
+/////////////////////////////////////////////////////////////
+// 💼 TABEL TAMBAHAN (PIUTANG & LAPORAN)
+/////////////////////////////////////////////////////////////
+
+Table debts {
+  id serial [pk]
+  debtor_name varchar
+  contact_info varchar
+  total_amount numeric
+  due_date date
+  status varchar
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table financial_reports {
+  id serial [pk]
+  period_start date
+  period_end date
+  total_income numeric
+  total_expense numeric
+  net_profit numeric
+  generated_at timestamp
+}
