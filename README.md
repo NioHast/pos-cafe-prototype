@@ -8,23 +8,23 @@
 Ini adalah **prototipe** aplikasi Point of Sale (POS) untuk kafe yang fokus pada **manajemen inventori** berbasis resep dengan logika pengurangan stok FIFO/FEFO. Prototipe ini dibangun menggunakan Laravel dan Filament untuk demonstrasi fungsi inti inventori.
 
 ### Scope Prototipe (Yang Sudah Dibuat)
-✅ Manajemen Kategori Menu  
-✅ Manajemen Bahan Baku (Ingredients) dengan Batch Tracking  
-✅ Manajemen Menu dengan Resep  
-✅ Pencatatan Waste (Bahan Terbuang)  
-✅ Manajemen User & Role  
-✅ **Simulasi Pesanan dengan Pengurangan Stok Otomatis (FIFO/FEFO)**  
+- Manajemen Kategori Menu  
+- Manajemen Bahan Baku (Ingredients) dengan Batch Tracking  
+- Manajemen Menu dengan Resep  
+- Pencatatan Waste (Bahan Terbuang)  
+- Manajemen User & Role  
+- **Simulasi Pesanan dengan Pengurangan Stok Otomatis (FIFO/FEFO)**  
 
 ### Yang Belum Diimplementasikan (Future Development)
-❌ Transaksi Pesanan Sungguhan (Orders & Order Items)  
-❌ UI Kasir (React PWA)  
-❌ UI Pelanggan (Livewire)  
-❌ Promosi & Diskon  
-❌ Laporan Keuangan  
-❌ Data Mining & Analytics  
-❌ Integrasi Payment Gateway  
+- Transaksi Pesanan Sungguhan (Orders & Order Items)  
+- UI Kasir (React PWA)  
+- UI Pelanggan (Livewire)  
+- Promosi & Diskon  
+- Laporan Keuangan  
+- Data Mining & Analytics  
+- Integrasi Payment Gateway  
 
-## 📸 Screenshots
+## Screenshots
 
 ### Dashboard
 ![Dashboard](.github/screenshots/dashboard.png)
@@ -93,8 +93,8 @@ npm run dev
 - **Resep (Recipe)**: Definisikan bahan yang digunakan per porsi
 - **Cost Calculation**: Hitung HPP (Harga Pokok Penjualan) otomatis
 
-### 3. Simulasi Pesanan 🎯
-Fitur unggulan prototipe ini:
+### 3. Simulasi Pesanan
+Fitur prototipe ini:
 - Form untuk menambah multiple item pesanan
 - **Pengurangan stok otomatis** berdasarkan resep
 - **Logika FIFO/FEFO**: Prioritas batch dengan expiry terdekat
@@ -183,13 +183,13 @@ Lihat `planning/02_database_schema.dbml` untuk detail lengkap.
 - **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Setup lengkap & troubleshooting
 - **planning/** - Requirements, database schema, class diagram
 
-## 🛠 Tech Stack
+## Tech Stack
 
 - **Backend**: PHP 8.4, Laravel 12
 - **Admin Panel**: Filament 3
 - **Database**: PostgreSQL 18
 - **Frontend**: Vite, Tailwind CSS (via Filament)
 
-## 📝 License
+## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
