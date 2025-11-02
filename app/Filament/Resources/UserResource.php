@@ -17,12 +17,18 @@ class UserResource extends Resource
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-users';
 
+    protected static string | \UnitEnum | null $navigationGroup = 'Settings';
+
+    protected static ?string $navigationLabel = 'Users';
+
+    protected static ?int $navigationSort = 1;
+
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->schema([
                 Components\TextInput::make('name')
-                    ->label('Nama')
+                    ->label('Name')
                     ->required()
                     ->maxLength(255),
                 Components\TextInput::make('email')
@@ -56,7 +62,7 @@ class UserResource extends Resource
                     ->label('ID')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('name')
-                    ->label('Nama')
+                    ->label('Name')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('email')
@@ -74,7 +80,7 @@ class UserResource extends Resource
                     })
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Dibuat')
+                    ->label('Created At')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

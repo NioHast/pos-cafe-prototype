@@ -16,12 +16,19 @@ class CategoryResource extends Resource
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-tag';
 
+    protected static string | \UnitEnum | null $navigationGroup = 'Inventory';
+
+    protected static ?string $navigationLabel = 'Categories';
+
+    // Hide from sidebar - accessible via Menu Resource
+    protected static bool $shouldRegisterNavigation = false;
+
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->schema([
                 Components\TextInput::make('name')
-                    ->label('Nama Kategori')
+                    ->label('Category Name')
                     ->required()
                     ->unique(ignoreRecord: true)
                     ->maxLength(255),
@@ -36,11 +43,11 @@ class CategoryResource extends Resource
                     ->label('ID')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('name')
-                    ->label('Nama Kategori')
+                    ->label('Category Name')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('menu_count')
-                    ->label('Jumlah Menu')
+                    ->label('Menu Count')
                     ->counts('menu')
                     ->sortable(),
             ])

@@ -17,29 +17,35 @@ class WasteRecordResource extends Resource
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-trash';
 
-    protected static ?string $modelLabel = 'Pencatatan Waste';
+    protected static string | \UnitEnum | null $navigationGroup = 'Inventory';
 
-    protected static ?string $pluralModelLabel = 'Pencatatan Waste';
+    protected static ?string $navigationLabel = 'Waste Records';
+
+    protected static ?int $navigationSort = 3;
+
+    protected static ?string $modelLabel = 'Waste Record';
+
+    protected static ?string $pluralModelLabel = 'Waste Records';
 
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->schema([
                 Components\Select::make('ingredient_id')
-                    ->label('Bahan')
+                    ->label('Ingredient')
                     ->relationship('ingredient', 'name')
                     ->required()
                     ->searchable()
                     ->preload()
                     ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->name} ({$record->unit})"),
                 Components\TextInput::make('quantity')
-                    ->label('Jumlah Terbuang')
+                    ->label('Wasted Quantity')
                     ->required()
                     ->numeric()
                     ->minValue(0)
                     ->step(0.01),
                 Components\Textarea::make('reason')
-                    ->label('Alasan')
+                    ->label('Reason')
                     ->required()
                     ->rows(3)
                     ->maxLength(65535),
@@ -56,30 +62,30 @@ class WasteRecordResource extends Resource
                     ->label('ID')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('ingredient.name')
-                    ->label('Bahan')
+                    ->label('Ingredient')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('quantity')
-                    ->label('Jumlah')
+                    ->label('Quantity')
                     ->sortable()
                     ->suffix(fn ($record) => ' ' . $record->ingredient->unit),
                 Tables\Columns\TextColumn::make('reason')
-                    ->label('Alasan')
+                    ->label('Reason')
                     ->limit(50)
                     ->tooltip(fn ($record) => $record->reason),
                 Tables\Columns\TextColumn::make('recordedBy.name')
-                    ->label('Dicatat Oleh')
+                    ->label('Recorded By')
                     ->sortable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Tanggal')
+                    ->label('Date')
                     ->dateTime()
                     ->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('ingredient')
                     ->relationship('ingredient', 'name')
-                    ->label('Bahan'),
+                    ->label('Ingredient'),
             ])
             ->actions([
                 \Filament\Actions\ViewAction::make(),

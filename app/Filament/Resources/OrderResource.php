@@ -19,7 +19,9 @@ class OrderResource extends Resource
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-shopping-cart';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'Transaksi';
+    protected static string | \UnitEnum | null $navigationGroup = 'Transactions';
+
+    protected static ?string $navigationLabel = 'Orders';
 
     protected static ?int $navigationSort = 1;
 
@@ -27,7 +29,7 @@ class OrderResource extends Resource
     {
         return $schema
             ->schema([
-                SchemaComponents\Section::make('Informasi Customer')
+                SchemaComponents\Section::make('Customer Information')
                     ->schema([
                         Components\Select::make('customer_id')
                             ->label('Customer')
@@ -35,9 +37,9 @@ class OrderResource extends Resource
                             ->searchable()
                             ->preload()
                             ->nullable()
-                            ->helperText('Kosongkan jika pelanggan anonim'),
+                            ->helperText('Leave empty for anonymous customer'),
                         Components\Select::make('cashier_id')
-                            ->label('Kasir')
+                            ->label('Cashier')
                             ->relationship('cashier', 'name')
                             ->required()
                             ->searchable()
@@ -45,28 +47,28 @@ class OrderResource extends Resource
                             ->default(auth()->id()),
                     ])->columns(2),
 
-                SchemaComponents\Section::make('Detail Pembayaran')
+                SchemaComponents\Section::make('Payment Details')
                     ->schema([
                         Components\TextInput::make('total_price')
-                            ->label('Total Harga')
+                            ->label('Total Price')
                             ->required()
                             ->numeric()
                             ->prefix('Rp')
                             ->minValue(0),
                         Components\Select::make('payment_status')
-                            ->label('Status Pembayaran')
+                            ->label('Payment Status')
                             ->options([
                                 'pending' => 'Pending',
-                                'paid' => 'Lunas',
-                                'failed' => 'Gagal',
-                                'refunded' => 'Dikembalikan',
+                                'paid' => 'Paid',
+                                'failed' => 'Failed',
+                                'refunded' => 'Refunded',
                             ])
                             ->required()
                             ->default('pending'),
                         Components\TextInput::make('payment_method')
-                            ->label('Metode Pembayaran')
+                            ->label('Payment Method')
                             ->required()
-                            ->placeholder('Cash, QRIS, Transfer, dll'),
+                            ->placeholder('Cash, QRIS, Transfer, etc'),
                     ])->columns(3),
             ]);
     }
@@ -76,16 +78,16 @@ class OrderResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('id')
-                    ->label('ID Order')
+                    ->label('Order ID')
                     ->sortable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('customer.name')
                     ->label('Customer')
                     ->searchable()
-                    ->default('Anonim')
+                    ->default('Anonymous')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('cashier.name')
-                    ->label('Kasir')
+                    ->label('Cashier')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('total_price')
@@ -102,27 +104,27 @@ class OrderResource extends Resource
                     ])
                     ->sortable(),
                 Tables\Columns\TextColumn::make('payment_method')
-                    ->label('Metode')
+                    ->label('Method')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Tanggal')
+                    ->label('Date')
                     ->dateTime('d M Y, H:i')
                     ->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('payment_status')
-                    ->label('Status Pembayaran')
+                    ->label('Payment Status')
                     ->options([
                         'pending' => 'Pending',
-                        'paid' => 'Lunas',
-                        'failed' => 'Gagal',
-                        'refunded' => 'Dikembalikan',
+                        'paid' => 'Paid',
+                        'failed' => 'Failed',
+                        'refunded' => 'Refunded',
                     ]),
                 Tables\Filters\Filter::make('today')
-                    ->label('Hari Ini')
+                    ->label('Today')
                     ->query(fn (Builder $query): Builder => $query->whereDate('created_at', today())),
                 Tables\Filters\Filter::make('this_month')
-                    ->label('Bulan Ini')
+                    ->label('This Month')
                     ->query(fn (Builder $query): Builder => $query->whereMonth('created_at', now()->month)),
             ])
             ->actions([

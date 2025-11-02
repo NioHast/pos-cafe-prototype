@@ -17,21 +17,27 @@ class IngredientResource extends Resource
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-cube';
 
+    protected static string | \UnitEnum | null $navigationGroup = 'Inventory';
+
+    protected static ?string $navigationLabel = 'Ingredients';
+
+    protected static ?int $navigationSort = 2;
+
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->schema([
                 Components\TextInput::make('name')
-                    ->label('Nama Bahan')
+                    ->label('Ingredient Name')
                     ->required()
                     ->maxLength(255),
                 Components\TextInput::make('unit')
-                    ->label('Satuan')
+                    ->label('Unit')
                     ->required()
                     ->maxLength(255)
                     ->placeholder('gram, ml, pcs'),
                 Components\TextInput::make('low_stock_threshold')
-                    ->label('Ambang Batas Stok Rendah')
+                    ->label('Low Stock Threshold')
                     ->required()
                     ->numeric()
                     ->minValue(0)
@@ -47,17 +53,17 @@ class IngredientResource extends Resource
                     ->label('ID')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('name')
-                    ->label('Nama Bahan')
+                    ->label('Ingredient Name')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('unit')
-                    ->label('Satuan')
+                    ->label('Unit')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('low_stock_threshold')
-                    ->label('Ambang Stok Rendah')
+                    ->label('Low Stock Threshold')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('total_stock')
-                    ->label('Total Stok')
+                    ->label('Total Stock')
                     ->getStateUsing(fn (Ingredient $record) => number_format($record->getTotalStock(), 2))
                     ->badge()
                     ->color(fn (Ingredient $record) => $record->getTotalStock() < $record->low_stock_threshold ? 'danger' : 'success'),
@@ -65,7 +71,7 @@ class IngredientResource extends Resource
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
                 Tables\Filters\Filter::make('low_stock')
-                    ->label('Stok Rendah')
+                    ->label('Low Stock')
                     ->query(fn ($query) => $query->whereHas('batches', function ($q) {
                         $q->havingRaw('SUM(quantity) < ingredients.low_stock_threshold');
                     })),

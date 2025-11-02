@@ -15,44 +15,47 @@ class CashierSessionResource extends Resource
 {
     protected static ?string $model = CashierSession::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-clock';
+    protected static ?string $navigationIcon = 'heroicon-o-clock';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'Transactions';
+    // Temporary disabled to fix type issue
+    protected static bool $shouldRegisterNavigation = false;
 
-    protected static ?string $navigationLabel = 'Cashier Sessions';
+    // protected static ?string $navigationGroup = 'Transactions';
 
-    protected static ?int $navigationSort = 2;
+    // protected static ?string $navigationLabel = 'Cashier Sessions';
+
+    // protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->schema([
-                SchemaComponents\Section::make('Session Information')
+                SchemaComponents\Section::make('Informasi Sesi')
                     ->schema([
                         Components\Select::make('user_id')
-                            ->label('Cashier')
+                            ->label('Kasir')
                             ->relationship('user', 'name')
                             ->required()
                             ->searchable()
                             ->preload(),
                         Components\DateTimePicker::make('shift_start')
-                            ->label('Start Time')
+                            ->label('Waktu Mulai')
                             ->required()
                             ->default(now()),
                         Components\DateTimePicker::make('shift_end')
-                            ->label('End Time')
+                            ->label('Waktu Selesai')
                             ->nullable(),
                     ])->columns(3),
 
-                SchemaComponents\Section::make('Statistics')
+                SchemaComponents\Section::make('Statistik')
                     ->schema([
                         Components\TextInput::make('total_sales')
-                            ->label('Total Sales')
+                            ->label('Total Penjualan')
                             ->numeric()
                             ->prefix('Rp')
                             ->default(0),
                         Components\TextInput::make('total_transactions')
-                            ->label('Total Transactions')
+                            ->label('Jumlah Transaksi')
                             ->numeric()
                             ->default(0),
                     ])->columns(2),
@@ -67,44 +70,44 @@ class CashierSessionResource extends Resource
                     ->label('ID')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('user.name')
-                    ->label('Cashier')
+                    ->label('Kasir')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('shift_start')
-                    ->label('Shift Start')
+                    ->label('Mulai Shift')
                     ->dateTime('d M Y, H:i')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('shift_end')
-                    ->label('Shift End')
+                    ->label('Selesai Shift')
                     ->dateTime('d M Y, H:i')
                     ->default('-')
                     ->sortable(),
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
-                    ->getStateUsing(fn ($record) => $record->isActive() ? 'Active' : 'Completed')
+                    ->getStateUsing(fn ($record) => $record->isActive() ? 'Aktif' : 'Selesai')
                     ->colors([
-                        'success' => 'Active',
-                        'secondary' => 'Completed',
+                        'success' => 'Aktif',
+                        'secondary' => 'Selesai',
                     ]),
                 Tables\Columns\TextColumn::make('total_sales')
-                    ->label('Total Sales')
+                    ->label('Total Penjualan')
                     ->money('IDR')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('total_transactions')
-                    ->label('Transactions')
+                    ->label('Transaksi')
                     ->alignCenter()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('duration')
-                    ->label('Duration (hours)')
+                    ->label('Durasi (jam)')
                     ->getStateUsing(fn ($record) => $record->duration ? number_format($record->duration, 1) : '-')
                     ->alignCenter(),
             ])
             ->filters([
                 Tables\Filters\Filter::make('active')
-                    ->label('Active Sessions')
+                    ->label('Sesi Aktif')
                     ->query(fn ($query) => $query->active()),
                 Tables\Filters\Filter::make('today')
-                    ->label('Today')
+                    ->label('Hari Ini')
                     ->query(fn ($query) => $query->today()),
             ])
             ->actions([
