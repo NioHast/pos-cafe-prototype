@@ -30,7 +30,7 @@
                         {{ $this->getSimulationStats()['completed_orders'] }}
                     </div>
                     <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        Completed Orders
+                        Paid Orders
                     </div>
                 </div>
             </x-filament::section>
