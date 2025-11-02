@@ -1,8 +1,8 @@
 # Setup Prototipe POS Cafe Inventory Management
 
 ## Prasyarat
-- PHP 8.2+
-- PostgreSQL 15+
+- PHP 8.4+
+- PostgreSQL 18
 - Composer
 - Node.js & npm (untuk Vite)
 
