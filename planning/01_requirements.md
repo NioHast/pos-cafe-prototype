@@ -82,17 +82,40 @@ Sistem menggunakan arsitektur *decoupled* dengan beberapa komponen utama:
 - Penghapusan data master menggunakan *soft delete*.  
 - Tersedia halaman simulasi pesanan untuk uji pengurangan stok.
 
+### 3.2.1 Standard Operating Procedure (SOP) Pembuatan Menu
+
+- Admin dapat membuat SOP step-by-step untuk setiap menu di tabel `menu_procedures`.
+- SOP mencakup urutan langkah pembuatan (step order), deskripsi langkah, durasi estimasi, dan gambar ilustrasi (opsional).
+- Setiap langkah dapat ditandai sebagai "critical step" (langkah penting yang tidak boleh dilewati).
+- Kasir/staf dapat melihat SOP saat memproses pesanan untuk memastikan konsistensi kualitas.
+- SOP dapat mencakup informasi:
+  - **Step Number:** Urutan langkah (1, 2, 3, ...)
+  - **Title:** Judul singkat langkah (e.g., "Grind Coffee Beans")
+  - **Description:** Deskripsi detail langkah (e.g., "Giling 15g biji kopi dengan grinder, setting medium-fine")
+  - **Duration:** Estimasi waktu (e.g., "30 detik")
+  - **Is Critical:** Apakah langkah ini wajib/critical (e.g., "Suhu air harus 92-96°C")
+  - **Image URL:** Link gambar ilustrasi (opsional)
+  - **Notes:** Catatan tambahan (e.g., "Pastikan grinder bersih sebelum digunakan")
+- Admin dapat mengaktifkan/menonaktifkan tampilan SOP per menu.
+- Staf dapat memberikan feedback atau melaporkan masalah pada SOP tertentu.
+
 ### 3.3 Fungsionalitas Kasir (Offline-First PWA)
 
 - Antarmuka kasir berupa PWA yang bisa diinstal dan dijalankan offline.  
-- Saat online, aplikasi melakukan *sync down* data referensi ke IndexedDB (menu, kategori, promosi, stok, user).  
+- Saat online, aplikasi melakukan *sync down* data referensi ke IndexedDB (menu, kategori, promosi, stok, user, **SOP menu**).  
 - Saat offline, kasir dapat:
   - Melihat menu dan kategori dari cache.  
   - Menerapkan promosi dari cache.  
   - Mengecek stok lokal.  
-  - Melakukan transaksi tunai penuh.  
+  - Melakukan transaksi tunai penuh.
+  - **Membuka dan mengikuti SOP pembuatan menu dari cache.**
 - Setiap transaksi offline mengurangi stok lokal dan disimpan di `transaction_queue`.  
 - Saat koneksi kembali, transaksi disinkronkan ke server secara otomatis.
+- Kasir dapat menampilkan SOP step-by-step untuk menu yang sedang dibuat dengan fitur:
+  - Checklist untuk menandai langkah yang sudah selesai.
+  - Timer untuk langkah dengan durasi spesifik.
+  - Zoom gambar ilustrasi jika tersedia.
+  - Highlight untuk critical steps.
 
 ### 3.4 Fungsionalitas Pelanggan (Self-Order Online)
 
@@ -167,6 +190,19 @@ Sistem menggunakan arsitektur *decoupled* dengan beberapa komponen utama:
 
 - Database pusat menggunakan PostgreSQL sesuai skema di `planning/02_database_schema.dbml`.  
 - Database lokal menggunakan IndexedDB sesuai skema di `planning/05_indexeddb_schema.md`.
+- **Tabel `menu_procedures`** ditambahkan untuk menyimpan SOP pembuatan menu dengan struktur:
+  - `id` (primary key)
+  - `menu_id` (foreign key to menu)
+  - `step_number` (integer, urutan langkah)
+  - `title` (varchar, judul langkah)
+  - `description` (text, deskripsi detail)
+  - `duration_seconds` (integer, estimasi durasi dalam detik)
+  - `is_critical` (boolean, apakah langkah critical)
+  - `image_url` (varchar, link gambar ilustrasi - nullable)
+  - `notes` (text, catatan tambahan - nullable)
+  - `is_active` (boolean, status aktif/nonaktif)
+  - `created_at`, `updated_at` (timestamps)
+- Relasi: Satu menu dapat memiliki banyak procedure steps (one-to-many).
 
 ---
 
