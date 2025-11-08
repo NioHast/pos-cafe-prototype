@@ -4,7 +4,8 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\IncomeResource\Pages;
 use App\Models\Income;
-use Filament\Forms\Components;
+use Filament\Forms\Components as FormComponents;
+use Filament\Schemas\Components as SchemaComponents;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -13,29 +14,23 @@ use Filament\Tables\Table;
 class IncomeResource extends Resource
 {
     protected static ?string $model = Income::class;
-
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-arrow-trending-up';
-
     protected static string | \UnitEnum | null $navigationGroup = 'Finance Details';
-
     protected static ?string $navigationLabel = 'Income';
-
     protected static ?int $navigationSort = 1;
-
     protected static bool $shouldCollapsedNavigationGroup = true;
-
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->schema([
-                Components\Section::make('Income Information')
+                SchemaComponents\Section::make('Income Information')
                     ->schema([
-                        Components\TextInput::make('source')
+                        FormComponents\TextInput::make('source')
                             ->label('Source')
                             ->required()
                             ->maxLength(255)
                             ->placeholder('e.g., Sales, Services, Other'),
-                        Components\Select::make('category')
+                        FormComponents\Select::make('category')
                             ->label('Category')
                             ->required()
                             ->options([
@@ -45,17 +40,17 @@ class IncomeResource extends Resource
                                 'Other' => 'Other',
                             ])
                             ->native(false),
-                        Components\TextInput::make('amount')
+                        FormComponents\TextInput::make('amount')
                             ->label('Amount')
                             ->required()
                             ->numeric()
                             ->prefix('Rp')
                             ->minValue(0),
-                        Components\DatePicker::make('date')
+                        FormComponents\DatePicker::make('date')
                             ->label('Date')
                             ->required()
                             ->default(now()),
-                        Components\Textarea::make('description')
+                        FormComponents\Textarea::make('description')
                             ->label('Description')
                             ->rows(3)
                             ->maxLength(500),

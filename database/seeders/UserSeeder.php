@@ -14,12 +14,10 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Get roles
         $adminRole = Role::where('name', 'admin')->first();
         $cashierRole = Role::where('name', 'cashier')->first();
 
         if ($adminRole) {
-            // Create admin user
             User::firstOrCreate(
                 ['email' => 'admin@example.com'],
                 [

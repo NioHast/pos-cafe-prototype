@@ -4,7 +4,8 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ExpenseResource\Pages;
 use App\Models\Expense;
-use Filament\Forms\Components;
+use Filament\Forms\Components as FormComponents;
+use Filament\Schemas\Components as SchemaComponents;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -13,29 +14,23 @@ use Filament\Tables\Table;
 class ExpenseResource extends Resource
 {
     protected static ?string $model = Expense::class;
-
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-arrow-trending-down';
-
     protected static string | \UnitEnum | null $navigationGroup = 'Finance Details';
-
     protected static ?string $navigationLabel = 'Expenses';
-
     protected static ?int $navigationSort = 2;
-
     protected static bool $shouldCollapsedNavigationGroup = true;
-
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->schema([
-                Components\Section::make('Expense Information')
+                SchemaComponents\Section::make('Expense Information')
                     ->schema([
-                        Components\TextInput::make('vendor')
+                        FormComponents\TextInput::make('vendor')
                             ->label('Vendor')
                             ->required()
                             ->maxLength(255)
                             ->placeholder('e.g., Supplier Name'),
-                        Components\Select::make('category')
+                        FormComponents\Select::make('category')
                             ->label('Category')
                             ->required()
                             ->options([
@@ -47,17 +42,17 @@ class ExpenseResource extends Resource
                                 'Other' => 'Other',
                             ])
                             ->native(false),
-                        Components\TextInput::make('amount')
+                        FormComponents\TextInput::make('amount')
                             ->label('Amount')
                             ->required()
                             ->numeric()
                             ->prefix('Rp')
                             ->minValue(0),
-                        Components\DatePicker::make('date')
+                        FormComponents\DatePicker::make('date')
                             ->label('Date')
                             ->required()
                             ->default(now()),
-                        Components\Select::make('payment_method')
+                        FormComponents\Select::make('payment_method')
                             ->label('Payment Method')
                             ->options([
                                 'Cash' => 'Cash',
@@ -67,7 +62,7 @@ class ExpenseResource extends Resource
                                 'Other' => 'Other',
                             ])
                             ->native(false),
-                        Components\Textarea::make('description')
+                        FormComponents\Textarea::make('description')
                             ->label('Description')
                             ->rows(3)
                             ->maxLength(500)

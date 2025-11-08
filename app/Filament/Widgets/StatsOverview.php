@@ -62,7 +62,7 @@ class StatsOverview extends StatsOverviewWidget
             Stat::make('Stok Rendah', $lowStock . ' Bahan')
                 ->description('Perlu restock segera')
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
-                ->color($lowStock > 0 ? 'warning' : 'success'),
+                ->color('warning'),
             
             Stat::make('Pesanan Bulan Ini', $ordersThisMonth)
                 ->description(($ordersChange >= 0 ? '↑ ' : '↓ ') . abs($ordersChange) . '% dari bulan lalu')

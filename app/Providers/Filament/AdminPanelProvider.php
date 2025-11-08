@@ -36,8 +36,9 @@ class AdminPanelProvider extends PanelProvider
                 'info' => Color::Blue,
             ])
             ->font('Sans-Serif') // Ubah font (default: Inter, bisa: Poppins, Roboto, dll)
-            ->darkMode(true) // Enable dark mode toggle
-            ->brandName('POS Cafe Inventory') // Ubah nama brand
+            ->darkMode(true)
+            ->sidebarCollapsibleOnDesktop()
+            ->brandName('POS Cafe Inventory')
             ->brandLogo(asset('images/logo.png')) // Logo (optional)
             ->favicon(asset('images/favicon.ico')) // Favicon (optional)
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
