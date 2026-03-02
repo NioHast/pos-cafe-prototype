@@ -151,13 +151,14 @@ class AnalyticsScheduleResource extends Resource
         ];
     }
 
-    public static function getNavigationBadge(): ?string
-    {
-        return static::getModel()::where('status', 'failed')->count() ?: null;
-    }
+    // Disabled for performance - causes query on every page load
+    // public static function getNavigationBadge(): ?string
+    // {
+    //     return static::getModel()::where('status', 'failed')->count() ?: null;
+    // }
 
-    public static function getNavigationBadgeColor(): ?string
-    {
-        return 'danger';
-    }
+    // public static function getNavigationBadgeColor(): ?string
+    // {
+    //     return 'danger';
+    // }
 }

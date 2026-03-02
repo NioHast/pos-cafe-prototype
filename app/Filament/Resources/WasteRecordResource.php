@@ -18,6 +18,8 @@ class WasteRecordResource extends Resource
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-trash';
 
     protected static string | \UnitEnum | null $navigationGroup = 'Inventory';
+    
+    protected static bool $shouldCollapsedNavigationGroup = true;
 
     protected static ?string $navigationLabel = 'Waste Records';
 
@@ -57,6 +59,7 @@ class WasteRecordResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn ($query) => $query->with(['ingredient', 'recordedBy']))
             ->columns([
                 Tables\Columns\TextColumn::make('id')
                     ->label('ID')
@@ -68,7 +71,7 @@ class WasteRecordResource extends Resource
                 Tables\Columns\TextColumn::make('quantity')
                     ->label('Quantity')
                     ->sortable()
-                    ->suffix(fn ($record) => ' ' . $record->ingredient->unit),
+                    ->formatStateUsing(fn ($record) => $record->quantity . ' ' . $record->ingredient->unit),
                 Tables\Columns\TextColumn::make('reason')
                     ->label('Reason')
                     ->limit(50)

@@ -6,6 +6,7 @@ use App\Filament\Resources\OrderResource\Pages;
 use App\Filament\Resources\OrderResource\RelationManagers;
 use App\Models\Order;
 use Filament\Forms\Components;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components as SchemaComponents;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
@@ -21,55 +22,99 @@ class OrderResource extends Resource
 
     protected static string | \UnitEnum | null $navigationGroup = 'Transactions';
 
+    protected static bool $shouldCollapsedNavigationGroup = true;
+
     protected static ?string $navigationLabel = 'Orders';
 
     protected static ?int $navigationSort = 1;
 
+    /**
+     * Orders are created by Kasir UI, not from admin panel.
+     * Form is only used for the Void action modal.
+     */
     public static function form(Schema $schema): Schema
+    {
+        return $schema->schema([]);
+    }
+
+    /**
+     * Infolist for the ViewOrder page — read-only order details.
+     */
+    public static function infolist(Schema $schema): Schema
     {
         return $schema
             ->schema([
-                SchemaComponents\Section::make('Customer Information')
+                SchemaComponents\Section::make('Order Information')
                     ->schema([
-                        Components\Select::make('customer_id')
-                            ->label('Customer')
-                            ->relationship('customer', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->nullable()
-                            ->helperText('Leave empty for anonymous customer'),
-                        Components\Select::make('cashier_id')
-                            ->label('Cashier')
-                            ->relationship('cashier', 'name')
-                            ->required()
-                            ->searchable()
-                            ->preload()
-                            ->default(auth()->id()),
+                        TextEntry::make('id')
+                            ->label('Order ID')
+                            ->copyable(),
+                        TextEntry::make('created_at')
+                            ->label('Order Date')
+                            ->dateTime('d M Y, H:i:s'),
+                        TextEntry::make('cashier.name')
+                            ->label('Cashier'),
+                    ])->columns(3),
+
+                SchemaComponents\Section::make('Customer')
+                    ->schema([
+                        TextEntry::make('customer_display_name')
+                            ->label('Name'),
+                        TextEntry::make('customer_type')
+                            ->label('Type')
+                            ->badge()
+                            ->color(fn (string $state): string => match ($state) {
+                                'student' => 'info',
+                                default => 'gray',
+                            }),
                     ])->columns(2),
 
-                SchemaComponents\Section::make('Payment Details')
+                SchemaComponents\Section::make('Financial Summary')
                     ->schema([
-                        Components\TextInput::make('total_price')
-                            ->label('Total Price')
-                            ->required()
-                            ->numeric()
-                            ->prefix('Rp')
-                            ->minValue(0),
-                        Components\Select::make('payment_status')
-                            ->label('Payment Status')
-                            ->options([
-                                'pending' => 'Pending',
-                                'paid' => 'Paid',
-                                'failed' => 'Failed',
-                                'refunded' => 'Refunded',
-                            ])
-                            ->required()
-                            ->default('pending'),
-                        Components\TextInput::make('payment_method')
-                            ->label('Payment Method')
-                            ->required()
-                            ->placeholder('Cash, QRIS, Transfer, etc'),
-                    ])->columns(3),
+                        TextEntry::make('subtotal')
+                            ->label('Subtotal')
+                            ->money('IDR'),
+                        TextEntry::make('discount_total')
+                            ->label('Discount')
+                            ->money('IDR'),
+                        TextEntry::make('tax_amount')
+                            ->label('Tax')
+                            ->money('IDR'),
+                        TextEntry::make('grand_total')
+                            ->label('Grand Total')
+                            ->money('IDR')
+                            ->weight('bold'),
+                    ])->columns(4),
+
+                SchemaComponents\Section::make('Payment')
+                    ->schema([
+                        TextEntry::make('payment_method')
+                            ->label('Method'),
+                        TextEntry::make('payment_status')
+                            ->label('Status')
+                            ->badge()
+                            ->color(fn (string $state): string => match ($state) {
+                                'paid' => 'success',
+                                'pending' => 'warning',
+                                'failed' => 'danger',
+                                'refunded' => 'gray',
+                                default => 'gray',
+                            }),
+                    ])->columns(2),
+
+                SchemaComponents\Section::make('Void Information')
+                    ->schema([
+                        TextEntry::make('void_reason')
+                            ->label('Reason'),
+                        TextEntry::make('void_notes')
+                            ->label('Notes'),
+                        TextEntry::make('voided_at')
+                            ->label('Voided At')
+                            ->dateTime('d M Y, H:i:s'),
+                        TextEntry::make('voidedByUser.name')
+                            ->label('Voided By'),
+                    ])->columns(2)
+                    ->visible(fn (Order $record): bool => $record->isVoided()),
             ]);
     }
 
@@ -79,33 +124,46 @@ class OrderResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('id')
                     ->label('Order ID')
+                    ->limit(8)
+                    ->tooltip(fn ($record) => $record->id)
                     ->sortable()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('customer.name')
+                Tables\Columns\TextColumn::make('customer_display_name')
                     ->label('Customer')
-                    ->searchable()
-                    ->default('Anonymous')
-                    ->sortable(),
+                    ->searchable('customer_name'),
+                Tables\Columns\BadgeColumn::make('customer_type')
+                    ->label('Type')
+                    ->colors([
+                        'info' => 'student',
+                        'gray' => 'guest',
+                    ]),
                 Tables\Columns\TextColumn::make('cashier.name')
                     ->label('Cashier')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('total_price')
+                Tables\Columns\TextColumn::make('grand_total')
                     ->label('Total')
                     ->money('IDR')
                     ->sortable(),
                 Tables\Columns\BadgeColumn::make('payment_status')
-                    ->label('Status')
+                    ->label('Payment')
                     ->colors([
                         'warning' => 'pending',
                         'success' => 'paid',
                         'danger' => 'failed',
-                        'secondary' => 'refunded',
+                        'gray' => 'refunded',
                     ])
                     ->sortable(),
                 Tables\Columns\TextColumn::make('payment_method')
                     ->label('Method')
-                    ->searchable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\IconColumn::make('voided_at')
+                    ->label('Voided')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-x-circle')
+                    ->falseIcon('')
+                    ->trueColor('danger')
+                    ->getStateUsing(fn ($record) => $record->isVoided()),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Date')
                     ->dateTime('d M Y, H:i')
@@ -120,22 +178,55 @@ class OrderResource extends Resource
                         'failed' => 'Failed',
                         'refunded' => 'Refunded',
                     ]),
+                Tables\Filters\SelectFilter::make('customer_type')
+                    ->label('Customer Type')
+                    ->options([
+                        'student' => 'Student',
+                        'guest' => 'Guest',
+                    ]),
                 Tables\Filters\Filter::make('today')
                     ->label('Today')
-                    ->query(fn (Builder $query): Builder => $query->whereDate('created_at', today())),
-                Tables\Filters\Filter::make('this_month')
-                    ->label('This Month')
-                    ->query(fn (Builder $query): Builder => $query->whereMonth('created_at', now()->month)),
+                    ->query(fn (Builder $query): Builder => $query->whereDate('created_at', today()))
+                    ->toggle(),
+                Tables\Filters\Filter::make('this_week')
+                    ->label('This Week')
+                    ->query(fn (Builder $query): Builder => $query->whereBetween('created_at', [
+                        now()->startOfWeek(),
+                        now()->endOfWeek(),
+                    ]))
+                    ->toggle(),
+                Tables\Filters\Filter::make('voided')
+                    ->label('Voided Only')
+                    ->query(fn (Builder $query): Builder => $query->whereNotNull('voided_at'))
+                    ->toggle(),
             ])
             ->actions([
                 \Filament\Actions\ViewAction::make(),
-                \Filament\Actions\EditAction::make(),
+                \Filament\Actions\Action::make('void')
+                    ->label('Void')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Void Transaction')
+                    ->modalDescription('This action cannot be undone. The order will be marked as voided.')
+                    ->form([
+                        Components\Select::make('void_reason')
+                            ->label('Reason')
+                            ->options([
+                                'customer_cancel' => 'Customer Cancel',
+                                'wrong_order' => 'Wrong Order',
+                                'payment_failed' => 'Payment Failed',
+                                'other' => 'Other',
+                            ])
+                            ->required(),
+                        Components\Textarea::make('void_notes')
+                            ->label('Notes')
+                            ->placeholder('Detail tambahan...'),
+                    ])
+                    ->action(fn (Order $record, array $data) => $record->void($data))
+                    ->visible(fn (Order $record): bool => !$record->isVoided()),
             ])
-            ->bulkActions([
-                \Filament\Actions\BulkActionGroup::make([
-                    \Filament\Actions\DeleteBulkAction::make(),
-                ]),
-            ])
+            ->bulkActions([])
             ->defaultSort('created_at', 'desc');
     }
 
@@ -150,14 +241,20 @@ class OrderResource extends Resource
     {
         return [
             'index' => Pages\ListOrders::route('/'),
-            'create' => Pages\CreateOrder::route('/create'),
             'view' => Pages\ViewOrder::route('/{record}'),
-            'edit' => Pages\EditOrder::route('/{record}/edit'),
         ];
     }
 
+    /**
+     * Today's order count as navigation badge.
+     */
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::whereDate('created_at', today())->count();
+        return static::getModel()::whereDate('created_at', today())->count() ?: null;
+    }
+
+    public static function getNavigationBadgeColor(): string|array|null
+    {
+        return 'info';
     }
 }

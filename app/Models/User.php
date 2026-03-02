@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -25,6 +26,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role_id',
+        'is_active',
     ];
 
     /**
@@ -47,7 +49,16 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Scope a query to only include active users.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
     }
 
     /**
@@ -64,6 +75,22 @@ class User extends Authenticatable
     public function wasteRecords(): HasMany
     {
         return $this->hasMany(WasteRecord::class, 'recorded_by');
+    }
+
+    /**
+     * Get the student profile associated with the user.
+     */
+    public function studentProfile(): HasOne
+    {
+        return $this->hasOne(StudentProfile::class);
+    }
+
+    /**
+     * Check if user is a student (role-based).
+     */
+    public function isStudent(): bool
+    {
+        return $this->hasRole('student');
     }
 
     /**

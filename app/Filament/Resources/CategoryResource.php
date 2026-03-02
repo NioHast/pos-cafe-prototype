@@ -32,6 +32,10 @@ class CategoryResource extends Resource
                     ->required()
                     ->unique(ignoreRecord: true)
                     ->maxLength(255),
+                Components\Toggle::make('is_active')
+                    ->label('Active')
+                    ->default(true)
+                    ->inline(false),
             ]);
     }
 
@@ -50,9 +54,18 @@ class CategoryResource extends Resource
                     ->label('Menu Count')
                     ->counts('menu')
                     ->sortable(),
+                Tables\Columns\IconColumn::make('is_active')
+                    ->label('Active')
+                    ->boolean()
+                    ->sortable(),
             ])
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
+                Tables\Filters\TernaryFilter::make('is_active')
+                    ->label('Active Status')
+                    ->placeholder('All')
+                    ->trueLabel('Active only')
+                    ->falseLabel('Inactive only'),
             ])
             ->actions([
                 \Filament\Actions\EditAction::make(),

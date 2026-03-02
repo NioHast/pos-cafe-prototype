@@ -4,7 +4,8 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ReceivableResource\Pages;
 use App\Models\Receivable;
-use Filament\Forms\Components;
+use Filament\Forms\Components as FormComponents;
+use Filament\Schemas\Components as SchemaComponents;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -28,32 +29,32 @@ class ReceivableResource extends Resource
     {
         return $schema
             ->schema([
-                Components\Section::make('Receivable Information')
+                SchemaComponents\Section::make('Receivable Information')
                     ->schema([
-                        Components\TextInput::make('customer_name')
+                        FormComponents\TextInput::make('customer_name')
                             ->label('Customer Name')
                             ->required()
                             ->maxLength(255),
-                        Components\TextInput::make('amount')
+                        FormComponents\TextInput::make('amount')
                             ->label('Total Amount')
                             ->required()
                             ->numeric()
                             ->prefix('Rp')
                             ->minValue(0),
-                        Components\DatePicker::make('invoice_date')
+                        FormComponents\DatePicker::make('invoice_date')
                             ->label('Invoice Date')
                             ->required()
                             ->default(now()),
-                        Components\DatePicker::make('due_date')
+                        FormComponents\DatePicker::make('due_date')
                             ->label('Due Date')
                             ->required()
                             ->after('invoice_date')
                             ->default(now()->addDays(30)),
                     ])->columns(2),
 
-                Components\Section::make('Payment Status')
+                SchemaComponents\Section::make('Payment Status')
                     ->schema([
-                        Components\Select::make('status')
+                        FormComponents\Select::make('status')
                             ->label('Status')
                             ->required()
                             ->options([
@@ -64,14 +65,14 @@ class ReceivableResource extends Resource
                             ])
                             ->default('pending')
                             ->native(false),
-                        Components\TextInput::make('paid_amount')
+                        FormComponents\TextInput::make('paid_amount')
                             ->label('Paid Amount')
                             ->required()
                             ->numeric()
                             ->prefix('Rp')
                             ->default(0)
                             ->minValue(0),
-                        Components\Textarea::make('notes')
+                        FormComponents\Textarea::make('notes')
                             ->label('Notes')
                             ->rows(3)
                             ->maxLength(500)
@@ -152,13 +153,14 @@ class ReceivableResource extends Resource
         ];
     }
 
-    public static function getNavigationBadge(): ?string
-    {
-        return static::getModel()::where('status', 'overdue')->count() ?: null;
-    }
+    // Disabled for performance
+    // public static function getNavigationBadge(): ?string
+    // {
+    //     return static::getModel()::where('status', 'overdue')->count() ?: null;
+    // }
 
-    public static function getNavigationBadgeColor(): ?string
-    {
-        return 'danger';
-    }
+    // public static function getNavigationBadgeColor(): ?string
+    // {
+    //     return 'danger';
+    // }
 }

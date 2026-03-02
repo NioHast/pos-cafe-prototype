@@ -5,7 +5,9 @@ namespace App\Filament\Pages;
 use App\Models\Menu;
 use App\Models\Order;
 use App\Models\OrderItem;
-use Filament\Actions\Action;
+use App\Models\User;
+use App\Observers\OrderObserver;
+use App\Services\OrderCalculationService;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -13,6 +15,7 @@ use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Illuminate\Support\Facades\DB;
 
 class OrderSimulation extends Page implements HasForms
 {
@@ -20,13 +23,13 @@ class OrderSimulation extends Page implements HasForms
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-beaker';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'Transactions';
+    protected static string | \UnitEnum | null $navigationGroup = 'Tools';
 
     protected static ?string $navigationLabel = 'Order Simulation';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 10;
 
-    protected static ?string $title = 'Order Simulation & Testing';
+    protected static ?string $title = 'Simulasi Kasir (Dev Tool)';
 
     protected string $view = 'filament.pages.order-simulation';
 
@@ -35,7 +38,6 @@ class OrderSimulation extends Page implements HasForms
     public function mount(): void
     {
         $this->form->fill([
-            'customer_name' => 'Test Customer',
             'payment_method' => 'cash',
         ]);
     }
@@ -43,26 +45,41 @@ class OrderSimulation extends Page implements HasForms
     protected function getFormSchema(): array
     {
         return [
+            Select::make('customer_id')
+                ->label('Customer (Student)')
+                ->options(
+                    User::whereHas('role', fn ($q) => $q->where('name', 'student'))
+                        ->pluck('name', 'id')
+                )
+                ->searchable()
+                ->nullable()
+                ->placeholder('Guest (no account)')
+                ->helperText('Select a student for student pricing, or leave empty for guest'),
+
             TextInput::make('customer_name')
-                ->label('Customer Name')
-                ->required()
-                ->maxLength(255),
+                ->label('Guest Name (optional)')
+                ->maxLength(255)
+                ->placeholder('Leave empty for anonymous guest')
+                ->helperText('Only used when no student is selected'),
+
             Select::make('payment_method')
                 ->label('Payment Method')
                 ->options([
                     'cash' => 'Cash',
                     'debit' => 'Debit Card',
                     'credit' => 'Credit Card',
+                    'qris' => 'QRIS',
                     'e-wallet' => 'E-Wallet',
                 ])
                 ->required()
                 ->native(false),
+
             Repeater::make('items')
                 ->label('Order Items')
                 ->schema([
                     Select::make('menu_id')
                         ->label('Menu Item')
-                        ->options(Menu::pluck('name', 'id'))
+                        ->options(Menu::where('is_active', true)->pluck('name', 'id'))
                         ->required()
                         ->searchable()
                         ->native(false),
@@ -92,47 +109,66 @@ class OrderSimulation extends Page implements HasForms
         $data = $this->form->getState();
 
         try {
-            // Calculate total
-            $total = 0;
-            foreach ($data['items'] as $item) {
-                $menu = Menu::find($item['menu_id']);
-                $total += $menu->price * $item['quantity'];
-            }
+            DB::beginTransaction();
 
-            // Create order
-            $order = Order::create([
-                'customer_id' => null, // Simulation doesn't need real customer
+            $calcService = app(OrderCalculationService::class);
+
+            // Resolve customer
+            $customer = !empty($data['customer_id'])
+                ? User::with('role', 'studentProfile')->find($data['customer_id'])
+                : null;
+
+            // Build customer snapshot
+            $guestName = empty($data['customer_id']) ? ($data['customer_name'] ?? null) : null;
+            $customerSnapshot = $calcService->snapshotCustomer($customer, $guestName);
+
+            // Create order (observer auto-fills customer_type if not set)
+            $order = Order::create(array_merge($customerSnapshot, [
                 'cashier_id' => auth()->id(),
-                'total_price' => $total,
                 'payment_method' => $data['payment_method'],
-                'payment_status' => 'pending',
-            ]);
+                'payment_status' => 'paid',
+                'total_price' => 0, // will be recalculated
+            ]));
 
-            // Create order items
+            // Create order items with snapshots
             foreach ($data['items'] as $item) {
-                $menu = Menu::find($item['menu_id']);
-                OrderItem::create([
+                $menu = Menu::findOrFail($item['menu_id']);
+                $itemData = $calcService->calculateItem($menu, (int) $item['quantity'], $customer);
+
+                OrderItem::create(array_merge($itemData, [
                     'order_id' => $order->id,
-                    'menu_id' => $item['menu_id'],
-                    'quantity' => $item['quantity'],
-                    'price' => $menu->price,
-                    'subtotal' => $menu->price * $item['quantity'],
-                ]);
+                    'handled_by' => auth()->id(),
+                ]));
             }
+
+            // Recalculate totals and reduce stock
+            OrderObserver::recalculateTotals($order);
+            OrderObserver::reduceStockForOrder($order);
+
+            DB::commit();
+
+            $order->refresh();
 
             Notification::make()
-                ->title('Order Simulated Successfully')
+                ->title('Order Created Successfully')
                 ->success()
-                ->body("Order #{$order->id} created with total Rp " . number_format($total, 0, ',', '.'))
+                ->body(sprintf(
+                    "Order #%s | %s (%s) | Total: Rp %s",
+                    substr($order->id, 0, 8),
+                    $order->customer_display_name,
+                    $order->customer_type,
+                    number_format($order->grand_total, 0, ',', '.')
+                ))
                 ->send();
 
             // Reset form
             $this->form->fill([
-                'customer_name' => 'Test Customer',
                 'payment_method' => 'cash',
-                'items' => [],
             ]);
+
         } catch (\Exception $e) {
+            DB::rollBack();
+
             Notification::make()
                 ->title('Simulation Failed')
                 ->danger()
@@ -147,7 +183,10 @@ class OrderSimulation extends Page implements HasForms
             'total_orders' => Order::count(),
             'pending_orders' => Order::where('payment_status', 'pending')->count(),
             'completed_orders' => Order::where('payment_status', 'paid')->count(),
-            'total_revenue' => 'Rp ' . number_format(Order::where('payment_status', 'paid')->sum('total_price'), 0, ',', '.'),
+            'total_revenue' => 'Rp ' . number_format(
+                Order::where('payment_status', 'paid')->whereNull('voided_at')->sum('grand_total'),
+                0, ',', '.'
+            ),
         ];
     }
 }

@@ -21,12 +21,22 @@ class Menu extends Model
         'student_price',
         'status',
         'category_id',
+        'is_active',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
         'student_price' => 'decimal:2',
+        'is_active' => 'boolean',
     ];
+
+    /**
+     * Scope a query to only include active menu items.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
 
     /**
      * Get the category that owns the menu.

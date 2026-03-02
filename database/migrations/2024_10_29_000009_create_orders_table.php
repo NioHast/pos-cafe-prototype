@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('orders', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->foreignId('customer_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('cashier_id')->constrained('users')->cascadeOnDelete();
             $table->decimal('total_price', 12, 2);

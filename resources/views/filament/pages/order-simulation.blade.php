@@ -41,7 +41,7 @@
                         {{ $this->getSimulationStats()['total_revenue'] }}
                     </div>
                     <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        Total Revenue
+                        Total Revenue (excl. voided)
                     </div>
                 </div>
             </x-filament::section>
@@ -50,10 +50,10 @@
         <!-- Simulation Form -->
         <x-filament::section>
             <x-slot name="heading">
-                Create Test Order
+                Simulasi Kasir
             </x-slot>
             <x-slot name="description">
-                Simulate orders to test FIFO/FEFO inventory logic and system behavior
+                Buat order test dengan snapshot pricing, customer type detection, dan stock reduction.
             </x-slot>
 
             <form wire:submit="simulateOrder">
@@ -61,7 +61,7 @@
 
                 <div class="mt-6 flex justify-end gap-3">
                     <x-filament::button type="submit" color="primary">
-                        Simulate Order
+                        Create Order
                     </x-filament::button>
                 </div>
             </form>
@@ -70,19 +70,28 @@
         <!-- Information -->
         <x-filament::section>
             <x-slot name="heading">
-                Simulation Information
+                How It Works
             </x-slot>
 
             <div class="prose dark:prose-invert max-w-none">
-                <p><strong>What this simulation does:</strong></p>
+                <p><strong>Customer Rules:</strong></p>
                 <ul>
-                    <li>Creates test orders with specified items and quantities</li>
-                    <li>Tests FIFO/FEFO ingredient consumption logic</li>
-                    <li>Validates inventory deduction accuracy</li>
-                    <li>Checks order processing workflow</li>
+                    <li><strong>Student selected:</strong> Uses student_price, auto-snapshots name, customer_type = 'student'</li>
+                    <li><strong>Guest with name:</strong> Uses regular price, manual name, customer_type = 'guest'</li>
+                    <li><strong>Anonymous:</strong> Uses regular price, no name, customer_type = 'guest'</li>
                 </ul>
 
-                <p class="mt-4"><strong>Note:</strong> Simulated orders are real database entries. Use the Orders page to manage or delete test data.</p>
+                <p class="mt-4"><strong>What happens on submit:</strong></p>
+                <ul>
+                    <li>Creates order with customer snapshot (immutable)</li>
+                    <li>Creates order items with product_name, price, base_price snapshots</li>
+                    <li>Calculates subtotal, discount, tax, grand_total</li>
+                    <li>Reduces ingredient stock via FIFO/FEFO (only for menus with recipes)</li>
+                </ul>
+
+                <p class="mt-4 text-sm text-gray-500">
+                    <strong>Note:</strong> Orders created here are real database entries. Use the Orders page to view or void them.
+                </p>
             </div>
         </x-filament::section>
     </div>

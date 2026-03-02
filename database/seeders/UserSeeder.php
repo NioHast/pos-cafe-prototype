@@ -39,5 +39,26 @@ class UserSeeder extends Seeder
                 ]
             );
         }
+
+        $studentRole = Role::where('name', 'student')->first();
+
+        if ($studentRole) {
+            $students = [
+                ['name' => 'Andi Pratama', 'email' => 'andi@student.example.com'],
+                ['name' => 'Siti Rahayu', 'email' => 'siti@student.example.com'],
+                ['name' => 'Budi Santoso', 'email' => 'budi@student.example.com'],
+            ];
+
+            foreach ($students as $student) {
+                User::firstOrCreate(
+                    ['email' => $student['email']],
+                    [
+                        'name' => $student['name'],
+                        'password' => Hash::make('password'),
+                        'role_id' => $studentRole->id,
+                    ]
+                );
+            }
+        }
     }
 }

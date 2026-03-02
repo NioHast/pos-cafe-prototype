@@ -1,12 +1,17 @@
 ////////////////////////////////////////////////////////////////////////////////
 // DBML Schema for Smart POS Cafe
-// Version: 2.0 (Final)
+// Version: 2.2
 // Description: Skema ini mencakup semua fitur yang didiskusikan:
 // - Manajemen Pengguna & Peran yang Disederhanakan
 // - Manajemen Stok & Menu yang Rinci
 // - Sistem Transaksi Fleksibel
 // - Fitur Promosi & Penjadwalan
 // - Pencatatan Hasil Analitik Data Mining yang Lengkap
+//
+// CATATAN UUID (v2.2 - Optimized):
+// - HANYA 3 tabel yang pakai UUID: orders, order_items, cashier_sessions
+// - Alasan: Hanya tabel yang client CREATE offline yang butuh UUID
+// - Semua tabel lain tetap serial untuk efisiensi storage
 ////////////////////////////////////////////////////////////////////////////////
 
 /////////////////////////////////////////////////////////////
@@ -40,7 +45,7 @@ Table student_profiles {
 }
 
 Table cashier_sessions {
-  id serial [pk]
+  id uuid [pk, note: 'UUID - kasir start shift offline']
   user_id int [ref: > users.id]
   shift_start timestamp
   shift_end timestamp [null]
@@ -80,7 +85,7 @@ Table menu {
 }
 
 Table ingredients {
-  id serial [pk]
+  id uuid [pk, note: 'UUIDv7']
   name varchar
   unit varchar [note: "Contoh: 'gram', 'ml', 'pcs'"]
   low_stock_threshold int
@@ -90,8 +95,8 @@ Table ingredients {
 }
 
 Table ingredient_batches {
-  id serial [pk]
-  ingredient_id int [ref: > ingredients.id]
+  id uuid [pk, note: 'UUIDv7']
+  ingredient_id uuid [ref: > ingredients.id]
   quantity numeric [note: 'Jumlah stok yang masuk pada batch ini']
   expiry_date date
   received_at timestamp
@@ -99,18 +104,18 @@ Table ingredient_batches {
 }
 
 Table menu_ingredients {
-  id serial [pk]
-  menu_id int [ref: > menu.id]
-  ingredient_id int [ref: > ingredients.id]
+  id uuid [pk, note: 'UUIDv7']
+  menu_id uuid [ref: > menu.id]
+  ingredient_id uuid [ref: > ingredients.id]
   quantity_used numeric [note: 'Jumlah bahan yang dibutuhkan per porsi menu']
 }
 
 Table waste_records {
-  id serial [pk]
-  ingredient_id int [ref: > ingredients.id]
+  id uuid [pk, note: 'UUIDv7']
+  ingredient_id uuid [ref: > ingredients.id]
   quantity numeric
   reason text
-  recorded_by int [ref: > users.id]
+  recorded_by uuid [ref: > users.id]
   created_at timestamp
 }
 
@@ -119,7 +124,7 @@ Table waste_records {
 /////////////////////////////////////////////////////////////
 
 Table orders {
-  id serial [pk]
+  id uuid [pk, note: 'UUID - kasir create offline']
   customer_id int [ref: > users.id, null, note: 'Pelanggan login, null jika anonim']
   cashier_id int [ref: > users.id, note: 'Staf (cashier) yang memproses transaksi']
   total_price numeric
@@ -130,8 +135,8 @@ Table orders {
 }
 
 Table order_items {
-  id serial [pk]
-  order_id int [ref: > orders.id]
+  id uuid [pk, note: 'UUID - part of order']
+  order_id uuid [ref: > orders.id]
   menu_id int [ref: > menu.id]
   quantity int
   price_at_transaction numeric [note: 'Harga menu saat pembelian']
@@ -161,13 +166,13 @@ Table promotion_rules {
 
 Table applied_promotions {
   id serial [pk]
-  order_id int [ref: > orders.id]
+  order_id uuid [ref: > orders.id]
   promotion_id int [ref: > promotions.id]
   amount_saved numeric
 }
 
 Table analytics_schedules {
-  id serial [pk]
+  id serial [pk, note: 'Server-only, tidak butuh UUID']
   task_name varchar [unique]
   frequency varchar [note: "'daily', 'weekly', 'monthly'"]
   run_at_time time [note: "Contoh: '02:00:00'"]
@@ -180,7 +185,7 @@ Table analytics_schedules {
 /////////////////////////////////////////////////////////////
 
 Table analytics_runs {
-  id serial [pk]
+  id serial [pk, note: 'Server-only, tidak butuh UUID']
   run_type varchar [note: "'association', 'clustering', 'prediction', 'estimation', 'classification'"]
   started_at timestamp
   finished_at timestamp
@@ -189,7 +194,7 @@ Table analytics_runs {
 }
 
 Table association_rules {
-  id serial [pk]
+  id serial [pk, note: 'Server-only']
   run_id int [ref: > analytics_runs.id]
   antecedent text [note: 'Item A']
   consequent text [note: 'Item B']
@@ -199,7 +204,7 @@ Table association_rules {
 }
 
 Table kmeans_clusters {
-  id serial [pk]
+  id serial [pk, note: 'Server-only']
   run_id int [ref: > analytics_runs.id]
   cluster_id int
   cluster_label varchar [note: "'Laris', 'Sedang', 'Tidak Laris'"]
@@ -209,13 +214,13 @@ Table kmeans_clusters {
 
 Table menu_cluster_assignments {
   run_id int [ref: > analytics_runs.id]
-  menu_id int [ref: > menu.id]
+  menu_id uuid [ref: > menu.id, note: 'UUID karena menu pakai UUIDv7']
   cluster_id int [ref: > kmeans_clusters.id]
   Note: 'Primary key komposit (run_id, menu_id)'
 }
 
 Table classification_results {
-  id serial [pk]
+  id serial [pk, note: 'Server-only']
   run_id int [ref: > analytics_runs.id]
   classification_date date
   predicted_level varchar [note: "'ramai', 'sedang', 'sepi'"]
@@ -223,7 +228,7 @@ Table classification_results {
 }
 
 Table estimation_results {
-  id serial [pk]
+  id serial [pk, note: 'Server-only']
   run_id int [ref: > analytics_runs.id]
   estimation_date date
   estimated_revenue numeric
@@ -231,7 +236,7 @@ Table estimation_results {
 }
 
 Table prediction_models {
-  id serial [pk]
+  id serial [pk, note: 'Server-only']
   run_id int [ref: > analytics_runs.id]
   model_name varchar
   algorithm varchar
@@ -241,7 +246,7 @@ Table prediction_models {
 }
 
 Table predictions {
-  id serial [pk]
+  id serial [pk, note: 'Server-only']
   model_id int [ref: > prediction_models.id]
   prediction_target_id int [note: 'Contoh: menu_id untuk prediksi penjualan menu']
   input_data jsonb
@@ -255,7 +260,7 @@ Table predictions {
 /////////////////////////////////////////////////////////////
 
 Table debts {
-  id serial [pk]
+  id uuid [pk, note: 'UUIDv7']
   debtor_name varchar
   contact_info varchar
   total_amount numeric
@@ -266,7 +271,7 @@ Table debts {
 }
 
 Table financial_reports {
-  id serial [pk]
+  id uuid [pk, note: 'UUIDv7']
   period_start date
   period_end date
   total_income numeric

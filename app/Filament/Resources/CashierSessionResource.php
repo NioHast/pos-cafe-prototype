@@ -18,6 +18,8 @@ class CashierSessionResource extends Resource
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-clock';
 
     protected static string | \UnitEnum | null $navigationGroup = 'Transactions';
+    
+    protected static bool $shouldCollapsedNavigationGroup = true;
 
     protected static ?string $navigationLabel = 'Cashier Sessions';
 
@@ -129,8 +131,11 @@ class CashierSessionResource extends Resource
         ];
     }
 
-    public static function getNavigationBadge(): ?string
-    {
-        return static::getModel()::active()->count();
-    }
+    // Disabled for performance optimization
+    // public static function getNavigationBadge(): ?string
+    // {
+    //     return cache()->remember('cashier_sessions_active_count', 300, function () {
+    //         return static::getModel()::active()->count() ?: null;
+    //     });
+    // }
 }

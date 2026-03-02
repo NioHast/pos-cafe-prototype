@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('unit'); // e.g., 'gram', 'ml', 'pcs'
             $table->integer('low_stock_threshold');
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
             $table->softDeletes();
         });

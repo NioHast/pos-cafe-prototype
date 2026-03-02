@@ -18,6 +18,8 @@ class IngredientResource extends Resource
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-cube';
 
     protected static string | \UnitEnum | null $navigationGroup = 'Inventory';
+    
+    protected static bool $shouldCollapsedNavigationGroup = true;
 
     protected static ?string $navigationLabel = 'Ingredients';
 
@@ -42,6 +44,10 @@ class IngredientResource extends Resource
                     ->numeric()
                     ->minValue(0)
                     ->default(100),
+                Components\Toggle::make('is_active')
+                    ->label('Active')
+                    ->default(true)
+                    ->inline(false),
             ]);
     }
 
@@ -67,6 +73,10 @@ class IngredientResource extends Resource
                     ->getStateUsing(fn (Ingredient $record) => number_format($record->getTotalStock(), 2))
                     ->badge()
                     ->color(fn (Ingredient $record) => $record->getTotalStock() < $record->low_stock_threshold ? 'danger' : 'success'),
+                Tables\Columns\IconColumn::make('is_active')
+                    ->label('Active')
+                    ->boolean()
+                    ->sortable(),
             ])
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
@@ -75,6 +85,11 @@ class IngredientResource extends Resource
                     ->query(fn ($query) => $query->whereHas('batches', function ($q) {
                         $q->havingRaw('SUM(quantity) < ingredients.low_stock_threshold');
                     })),
+                Tables\Filters\TernaryFilter::make('is_active')
+                    ->label('Active Status')
+                    ->placeholder('All')
+                    ->trueLabel('Active only')
+                    ->falseLabel('Inactive only'),
             ])
             ->actions([
                 \Filament\Actions\EditAction::make(),

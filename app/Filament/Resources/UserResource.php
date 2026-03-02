@@ -51,6 +51,10 @@ class UserResource extends Resource
                     ->default(function () {
                         return \App\Models\Role::where('name', 'admin')->first()?->id;
                     }),
+                Components\Toggle::make('is_active')
+                    ->label('Active')
+                    ->default(true)
+                    ->inline(false),
             ]);
     }
 
@@ -79,6 +83,10 @@ class UserResource extends Resource
                         default => 'gray',
                     })
                     ->sortable(),
+                Tables\Columns\IconColumn::make('is_active')
+                    ->label('Active')
+                    ->boolean()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Created At')
                     ->dateTime()
@@ -90,6 +98,11 @@ class UserResource extends Resource
                 Tables\Filters\SelectFilter::make('role')
                     ->relationship('role', 'name')
                     ->label('Role'),
+                Tables\Filters\TernaryFilter::make('is_active')
+                    ->label('Active Status')
+                    ->placeholder('All')
+                    ->trueLabel('Active only')
+                    ->falseLabel('Inactive only'),
             ])
             ->actions([
                 \Filament\Actions\EditAction::make(),
@@ -102,6 +115,13 @@ class UserResource extends Resource
                     \Filament\Actions\RestoreBulkAction::make(),
                 ]),
             ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            UserResource\RelationManagers\StudentProfileRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

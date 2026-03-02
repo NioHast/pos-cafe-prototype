@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\PromotionResource\Pages;
 use App\Models\Promotion;
 use Filament\Forms\Components;
+use Filament\Schemas\Components as SchemaComponents;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -17,6 +18,8 @@ class PromotionResource extends Resource
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-gift';
 
     protected static string | \UnitEnum | null $navigationGroup = 'Transactions';
+    
+    protected static bool $shouldCollapsedNavigationGroup = true;
 
     protected static ?string $navigationLabel = 'Promotions';
 
@@ -26,7 +29,7 @@ class PromotionResource extends Resource
     {
         return $schema
             ->schema([
-                Components\Section::make('Promotion Information')
+                SchemaComponents\Section::make('Promotion Information')
                     ->schema([
                         Components\TextInput::make('name')
                             ->label('Promotion Name')
@@ -56,7 +59,7 @@ class PromotionResource extends Resource
                             ->helperText('Leave empty if no minimum purchase required'),
                     ])->columns(2),
 
-                Components\Section::make('Validity Period')
+                SchemaComponents\Section::make('Validity Period')
                     ->schema([
                         Components\DatePicker::make('start_date')
                             ->label('Start Date')
@@ -78,7 +81,7 @@ class PromotionResource extends Resource
                             ->default('scheduled'),
                     ])->columns(3),
 
-                Components\Section::make('Usage Limits & Details')
+                SchemaComponents\Section::make('Usage Limits & Details')
                     ->schema([
                         Components\TextInput::make('usage_limit')
                             ->label('Usage Limit')
@@ -116,14 +119,16 @@ class PromotionResource extends Resource
                     ->label('Promotion Name')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\BadgeColumn::make('type')
+                Tables\Columns\TextColumn::make('type')
                     ->label('Type')
-                    ->colors([
-                        'success' => 'percentage',
-                        'info' => 'fixed_amount',
-                        'warning' => 'buy_x_get_y',
-                        'danger' => 'bundle',
-                    ]),
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'percentage' => 'success',
+                        'fixed_amount' => 'info', 
+                        'buy_x_get_y' => 'warning',
+                        'bundle' => 'danger',
+                        default => 'gray',
+                    }),
                 Tables\Columns\TextColumn::make('discount_value')
                     ->label('Discount')
                     ->formatStateUsing(fn ($record) => $record->type === 'percentage' 
@@ -137,14 +142,16 @@ class PromotionResource extends Resource
                     ->label('End Date')
                     ->date('d M Y')
                     ->sortable(),
-                Tables\Columns\BadgeColumn::make('status')
+                Tables\Columns\TextColumn::make('status')
                     ->label('Status')
-                    ->colors([
-                        'warning' => 'scheduled',
-                        'success' => 'active',
-                        'danger' => 'inactive',
-                        'secondary' => 'expired',
-                    ]),
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'scheduled' => 'warning',
+                        'active' => 'success',
+                        'inactive' => 'danger', 
+                        'expired' => 'gray',
+                        default => 'gray',
+                    }),
                 Tables\Columns\TextColumn::make('usage_count')
                     ->label('Used')
                     ->formatStateUsing(fn ($record) => 
@@ -171,18 +178,6 @@ class PromotionResource extends Resource
                     ]),
                 Tables\Filters\TrashedFilter::make(),
             ])
-            ->actions([
-                \Filament\Actions\ViewAction::make(),
-                \Filament\Actions\EditAction::make(),
-                \Filament\Actions\DeleteAction::make(),
-            ])
-            ->bulkActions([
-                \Filament\Actions\BulkActionGroup::make([
-                    \Filament\Actions\DeleteBulkAction::make(),
-                    \Filament\Actions\ForceDeleteBulkAction::make(),
-                    \Filament\Actions\RestoreBulkAction::make(),
-                ]),
-            ])
             ->defaultSort('created_at', 'desc');
     }
 
@@ -204,8 +199,11 @@ class PromotionResource extends Resource
             ]);
     }
 
-    public static function getNavigationBadge(): ?string
-    {
-        return static::getModel()::where('status', 'active')->count();
-    }
+    // Disabled for performance
+    // public static function getNavigationBadge(): ?string
+    // {
+    //     return cache()->remember('promotions_active_count', 300, function () {
+    //         return static::getModel()::where('status', 'active')->count() ?: null;
+    //     });
+    // }
 }

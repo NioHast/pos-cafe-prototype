@@ -19,6 +19,8 @@ class MenuResource extends Resource
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-document-text';
 
     protected static string | \UnitEnum | null $navigationGroup = 'Inventory';
+    
+    protected static bool $shouldCollapsedNavigationGroup = true;
 
     protected static ?string $navigationLabel = 'Menu';
 
@@ -70,6 +72,10 @@ class MenuResource extends Resource
                             ])
                             ->required()
                             ->default('available'),
+                        Components\Toggle::make('is_active')
+                            ->label('Active')
+                            ->default(true)
+                            ->inline(false),
                     ])->columns(3),
             ]);
     }
@@ -110,6 +116,10 @@ class MenuResource extends Resource
                         'sold_out' => 'Habis',
                         default => $state,
                     }),
+                Tables\Columns\IconColumn::make('is_active')
+                    ->label('Active')
+                    ->boolean()
+                    ->sortable(),
             ])
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
@@ -122,6 +132,11 @@ class MenuResource extends Resource
                         'sold_out' => 'Habis',
                     ])
                     ->label('Status'),
+                Tables\Filters\TernaryFilter::make('is_active')
+                    ->label('Active Status')
+                    ->placeholder('All')
+                    ->trueLabel('Active only')
+                    ->falseLabel('Inactive only'),
             ])
             ->actions([
                 \Filament\Actions\EditAction::make(),

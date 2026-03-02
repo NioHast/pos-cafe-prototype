@@ -4,7 +4,6 @@ namespace App\Filament\Resources\OrderResource\Pages;
 
 use App\Filament\Resources\OrderResource;
 use Filament\Resources\Pages\ListRecords;
-use Filament\Actions;
 
 class ListOrders extends ListRecords
 {
@@ -12,8 +11,7 @@ class ListOrders extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return [
-            Actions\CreateAction::make(),
-        ];
+        // Orders are created via Kasir UI, not admin panel
+        return [];
     }
 }

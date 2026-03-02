@@ -2,25 +2,40 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class OrderItem extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUuids;
 
     protected $fillable = [
         'order_id',
         'menu_id',
+        'product_name',
         'quantity',
-        'price_at_transaction',
+        'price',
+        'base_price',
+        'price_at_transaction', // legacy, kept for backward compat
+        'discount_amount',
+        'discount_name',
+        'line_total',
         'handled_by',
     ];
 
     protected $casts = [
+        'price' => 'decimal:2',
+        'base_price' => 'decimal:2',
         'price_at_transaction' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
+        'line_total' => 'decimal:2',
     ];
+
+    // ──────────────────────────────────────
+    // Relationships
+    // ──────────────────────────────────────
 
     /**
      * Get the order this item belongs to
@@ -31,7 +46,7 @@ class OrderItem extends Model
     }
 
     /**
-     * Get the menu item
+     * Get the menu item (nullable after menu soft-deleted or hard-deleted)
      */
     public function menu(): BelongsTo
     {
@@ -46,11 +61,15 @@ class OrderItem extends Model
         return $this->belongsTo(User::class, 'handled_by');
     }
 
+    // ──────────────────────────────────────
+    // Accessors
+    // ──────────────────────────────────────
+
     /**
-     * Get subtotal for this item
+     * Get subtotal for this item (legacy accessor, use line_total instead)
      */
     public function getSubtotalAttribute(): float
     {
-        return $this->quantity * $this->price_at_transaction;
+        return (float) ($this->line_total ?? ($this->quantity * $this->price_at_transaction));
     }
 }

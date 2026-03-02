@@ -15,7 +15,20 @@ class Ingredient extends Model
         'name',
         'unit',
         'low_stock_threshold',
+        'is_active',
     ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
+    /**
+     * Scope a query to only include active ingredients.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
 
     /**
      * Get the batches for the ingredient.

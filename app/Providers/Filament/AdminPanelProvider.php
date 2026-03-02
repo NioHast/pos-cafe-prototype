@@ -37,10 +37,14 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->font('Sans-Serif') // Ubah font (default: Inter, bisa: Poppins, Roboto, dll)
             ->darkMode(true)
-            ->sidebarCollapsibleOnDesktop()
+            // ->sidebarCollapsibleOnDesktop()
+            ->spa() // Enable SPA mode untuk navigasi instan  
+            ->sidebarWidth('15rem') // Optimize sidebar width
+            ->maxContentWidth('full') // Optimize content width
+            ->databaseNotifications(false) // Disable if not needed
             ->brandName('POS Cafe Inventory')
-            ->brandLogo(asset('images/logo.png')) // Logo (optional)
-            ->favicon(asset('images/favicon.ico')) // Favicon (optional)
+            ->brandLogo(asset('images/logo.png'))
+            ->favicon(asset('images/favicon.ico'))
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([

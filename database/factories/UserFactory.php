@@ -26,9 +26,9 @@ class UserFactory extends Factory
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
-            'remember_token' => Str::random(10),
+            'role_id' => \App\Models\Role::where('name', 'admin')->first()?->id ?? 1,
+            'is_active' => true,
         ];
     }
 
@@ -37,8 +37,26 @@ class UserFactory extends Factory
      */
     public function unverified(): static
     {
+        return $this->state(fn (array $attributes) => []);
+    }
+
+    /**
+     * Set the user role to student.
+     */
+    public function student(): static
+    {
         return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
+            'role_id' => \App\Models\Role::where('name', 'student')->first()?->id,
+        ]);
+    }
+
+    /**
+     * Set the user role to cashier.
+     */
+    public function cashier(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role_id' => \App\Models\Role::where('name', 'cashier')->first()?->id,
         ]);
     }
 }

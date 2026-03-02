@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\OrderResource\RelationManagers;
 
-use Filament\Forms\Components;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -14,84 +13,53 @@ class ItemsRelationManager extends RelationManager
 
     protected static ?string $title = 'Items Pesanan';
 
+    /**
+     * No form needed — order items are created by the Kasir UI,
+     * not manually from admin panel.
+     */
     public function form(Schema $schema): Schema
     {
-        return $schema
-            ->schema([
-                Components\Select::make('menu_id')
-                    ->label('Menu')
-                    ->relationship('menu', 'name')
-                    ->required()
-                    ->searchable()
-                    ->preload()
-                    ->reactive()
-                    ->afterStateUpdated(function ($state, callable $set) {
-                        if ($state) {
-                            $menu = \App\Models\Menu::find($state);
-                            if ($menu) {
-                                $set('price_at_transaction', $menu->price);
-                            }
-                        }
-                    }),
-                Components\TextInput::make('quantity')
-                    ->label('Jumlah')
-                    ->required()
-                    ->numeric()
-                    ->minValue(1)
-                    ->default(1),
-                Components\TextInput::make('price_at_transaction')
-                    ->label('Harga Satuan')
-                    ->required()
-                    ->numeric()
-                    ->prefix('Rp')
-                    ->helperText('Harga akan otomatis terisi dari menu'),
-                Components\Select::make('handled_by')
-                    ->label('Dibuat Oleh')
-                    ->relationship('handler', 'name')
-                    ->required()
-                    ->searchable()
-                    ->preload()
-                    ->default(auth()->id()),
-            ]);
+        return $schema->schema([]);
     }
 
     public function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('id')
+            ->recordTitleAttribute('product_name')
             ->columns([
-                Tables\Columns\TextColumn::make('menu.name')
-                    ->label('Menu')
+                Tables\Columns\TextColumn::make('product_name')
+                    ->label('Product')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('quantity')
                     ->label('Qty')
                     ->alignCenter(),
-                Tables\Columns\TextColumn::make('price_at_transaction')
-                    ->label('Harga')
-                    ->money('IDR'),
-                Tables\Columns\TextColumn::make('subtotal')
-                    ->label('Subtotal')
+                Tables\Columns\TextColumn::make('base_price')
+                    ->label('Base Price')
                     ->money('IDR')
-                    ->getStateUsing(fn ($record) => $record->quantity * $record->price_at_transaction),
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('price')
+                    ->label('Unit Price')
+                    ->money('IDR'),
+                Tables\Columns\TextColumn::make('discount_amount')
+                    ->label('Discount')
+                    ->money('IDR')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('discount_name')
+                    ->label('Promo')
+                    ->placeholder('-')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('line_total')
+                    ->label('Line Total')
+                    ->money('IDR')
+                    ->weight('bold'),
                 Tables\Columns\TextColumn::make('handler.name')
-                    ->label('Dibuat Oleh')
+                    ->label('Made By')
                     ->searchable(),
             ])
-            ->filters([
-                //
-            ])
-            ->headerActions([
-                Tables\Actions\CreateAction::make(),
-            ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->filters([])
+            ->headerActions([])
+            ->actions([])
+            ->bulkActions([]);
     }
 }

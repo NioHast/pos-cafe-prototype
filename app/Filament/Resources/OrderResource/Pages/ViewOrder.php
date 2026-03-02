@@ -4,7 +4,6 @@ namespace App\Filament\Resources\OrderResource\Pages;
 
 use App\Filament\Resources\OrderResource;
 use Filament\Resources\Pages\ViewRecord;
-use Filament\Actions;
 
 class ViewOrder extends ViewRecord
 {
@@ -12,8 +11,7 @@ class ViewOrder extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        return [
-            Actions\EditAction::make(),
-        ];
+        // No edit action — orders are immutable
+        return [];
     }
 }

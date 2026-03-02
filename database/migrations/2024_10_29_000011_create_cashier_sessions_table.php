@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('cashier_sessions', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->timestamp('shift_start');
             $table->timestamp('shift_end')->nullable();

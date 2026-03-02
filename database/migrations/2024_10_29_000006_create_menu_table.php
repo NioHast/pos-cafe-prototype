@@ -19,6 +19,7 @@ return new class extends Migration
             $table->decimal('student_price', 10, 2)->nullable(); // Harga khusus mahasiswa
             $table->string('status')->default('available'); // 'available', 'sold_out'
             $table->foreignId('category_id')->constrained('categories')->onDelete('cascade');
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
             $table->softDeletes();
         });
