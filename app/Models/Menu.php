@@ -85,6 +85,14 @@ class Menu extends Model
     }
 
     /**
+     * Check if menu has a recipe (ingredients assigned).
+     */
+    public function hasRecipe(): bool
+    {
+        return $this->menuIngredients()->exists();
+    }
+
+    /**
      * Check if menu item is available.
      */
     public function isAvailable(): bool

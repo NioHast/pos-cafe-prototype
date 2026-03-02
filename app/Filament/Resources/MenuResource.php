@@ -4,11 +4,13 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\MenuResource\Pages;
 use App\Filament\Resources\MenuResource\RelationManagers;
+use App\Models\Ingredient;
 use App\Models\Menu;
 use Filament\Forms\Components;
 use Filament\Schemas\Components as SchemaComponents;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
+use Filament\Support\RawJs;
 use Filament\Tables;
 use Filament\Tables\Table;
 
@@ -30,6 +32,12 @@ class MenuResource extends Resource
     {
         return $schema
             ->schema([
+                Components\Placeholder::make('no_recipe_warning')
+                    ->label('')
+                    ->content('⚠️ Menu ini belum memiliki resep bahan. Stok bahan tidak akan dikurangi saat menu ini dipesan. Tambahkan resep di tab "Resep (Bahan)" di bawah.')
+                    ->visible(fn (?Menu $record) => $record && !$record->hasRecipe())
+                    ->columnSpanFull(),
+
                 SchemaComponents\Section::make('Informasi Menu')
                     ->schema([
                         Components\TextInput::make('name')
@@ -45,7 +53,17 @@ class MenuResource extends Resource
                             ->relationship('category', 'name')
                             ->required()
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->createOptionForm([
+                                Components\TextInput::make('name')
+                                    ->label('Nama Kategori')
+                                    ->required()
+                                    ->maxLength(255),
+                                Components\Toggle::make('is_active')
+                                    ->label('Active')
+                                    ->default(true),
+                            ])
+                            ->createOptionModalHeading('Tambah Kategori Baru'),
                     ])->columns(1),
                 
                 SchemaComponents\Section::make('Harga & Status')
@@ -53,15 +71,17 @@ class MenuResource extends Resource
                         Components\TextInput::make('price')
                             ->label('Harga Normal')
                             ->required()
+                            ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
+                            ->stripCharacters(['.'])
                             ->numeric()
                             ->minValue(0)
-                            ->step(0.01)
                             ->prefix('Rp'),
                         Components\TextInput::make('student_price')
                             ->label('Harga Mahasiswa')
+                            ->mask(RawJs::make("\$money(\$input, ',', '.', 0)"))
+                            ->stripCharacters(['.'])
                             ->numeric()
                             ->minValue(0)
-                            ->step(0.01)
                             ->prefix('Rp')
                             ->helperText('Kosongkan jika sama dengan harga normal'),
                         Components\Select::make('status')
@@ -77,6 +97,44 @@ class MenuResource extends Resource
                             ->default(true)
                             ->inline(false),
                     ])->columns(3),
+
+                SchemaComponents\Section::make('Resep Bahan')
+                    ->description('Daftar bahan yang dibutuhkan per porsi menu ini. Kosongkan jika menu tidak memerlukan pengurangan stok.')
+                    ->schema([
+                        Components\Repeater::make('recipe_items')
+                            ->label('')
+                            ->schema([
+                                Components\Select::make('ingredient_id')
+                                    ->label('Bahan')
+                                    ->options(fn () => Ingredient::active()->get()->pluck('name', 'id')->map(fn ($name, $id) => $name . ' (' . Ingredient::find($id)->unit . ')'))
+                                    ->required()
+                                    ->searchable()
+                                    ->live()
+                                    ->disableOptionsWhenSelectedInSiblingRepeaterItems()
+                                    ->columnSpan(2),
+                                Components\TextInput::make('quantity_used')
+                                    ->label('Jumlah per Porsi')
+                                    ->required()
+                                    ->numeric()
+                                    ->minValue(0.01)
+                                    ->step(1)
+                                    ->suffix(function (SchemaComponents\Utilities\Get $get) {
+                                        $ingredientId = $get('ingredient_id');
+                                        if (!$ingredientId) {
+                                            return 'pilih bahan dulu';
+                                        }
+                                        return Ingredient::find($ingredientId)?->unit ?? '';
+                                    })
+                                    ->columnSpan(1),
+                            ])
+                            ->columns(3)
+                            ->defaultItems(0)
+                            ->addActionLabel('+ Tambah Bahan')
+                            ->reorderable(false)
+                            ->visible(fn (?Menu $record) => $record === null),
+                    ])
+                    ->visible(fn (?Menu $record) => $record === null)
+                    ->icon('heroicon-o-beaker'),
             ]);
     }
 
@@ -116,6 +174,11 @@ class MenuResource extends Resource
                         'sold_out' => 'Habis',
                         default => $state,
                     }),
+                Tables\Columns\TextColumn::make('has_recipe')
+                    ->label('Resep')
+                    ->badge()
+                    ->getStateUsing(fn (Menu $record) => $record->menuIngredients()->exists() ? 'Ada Resep' : 'Tanpa Resep')
+                    ->color(fn (string $state) => $state === 'Ada Resep' ? 'success' : 'warning'),
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('Active')
                     ->boolean()
@@ -137,6 +200,16 @@ class MenuResource extends Resource
                     ->placeholder('All')
                     ->trueLabel('Active only')
                     ->falseLabel('Inactive only'),
+                Tables\Filters\TernaryFilter::make('has_recipe')
+                    ->label('Resep')
+                    ->placeholder('Semua')
+                    ->trueLabel('Punya Resep')
+                    ->falseLabel('Tanpa Resep')
+                    ->queries(
+                        true: fn ($query) => $query->whereHas('menuIngredients'),
+                        false: fn ($query) => $query->whereDoesntHave('menuIngredients'),
+                        blank: fn ($query) => $query,
+                    ),
             ])
             ->actions([
                 \Filament\Actions\EditAction::make(),

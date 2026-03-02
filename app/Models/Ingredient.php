@@ -11,6 +11,17 @@ class Ingredient extends Model
 {
     use SoftDeletes;
 
+    const UNITS = [
+        'gram'   => 'Gram (g)',
+        'kg'     => 'Kilogram (kg)',
+        'ml'     => 'Mililiter (ml)',
+        'liter'  => 'Liter (L)',
+        'pcs'    => 'Buah / Pcs',
+        'sachet' => 'Sachet',
+        'sdm'    => 'Sendok Makan (sdm)',
+        'sdt'    => 'Sendok Teh (sdt)',
+    ];
+
     protected $fillable = [
         'name',
         'unit',

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('ingredients', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('unit'); // e.g., 'gram', 'ml', 'pcs'
+            $table->enum('unit', ['gram', 'kg', 'ml', 'liter', 'pcs', 'sachet', 'sdm', 'sdt']);
             $table->integer('low_stock_threshold');
             $table->boolean('is_active')->default(true);
             $table->timestamps();

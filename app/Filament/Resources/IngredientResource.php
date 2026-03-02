@@ -33,11 +33,12 @@ class IngredientResource extends Resource
                     ->label('Ingredient Name')
                     ->required()
                     ->maxLength(255),
-                Components\TextInput::make('unit')
-                    ->label('Unit')
+                Components\Select::make('unit')
+                    ->label('Satuan')
+                    ->options(Ingredient::UNITS)
                     ->required()
-                    ->maxLength(255)
-                    ->placeholder('gram, ml, pcs'),
+                    ->searchable()
+                    ->native(false),
                 Components\TextInput::make('low_stock_threshold')
                     ->label('Low Stock Threshold')
                     ->required()
