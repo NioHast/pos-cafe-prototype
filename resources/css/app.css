@@ -1,0 +1,15 @@
+:root {
+    --orange-primary: #E8692A;
+    --orange-light:   #FFF0E8;
+    --navy-sidebar:   #1A2332;
+    --navy-dark:      #0F1621;
+    --blue-active:    #3B6FD4;
+    --gray-bg:        #F8F9FA;
+    --gray-border:    #E9ECEF;
+    --gray-text:      #6C757D;
+    --text-dark:      #1A1A2E;
+    --green-success:  #28A745;
+    --red-danger:     #DC3545;
+}
+* { box-sizing: border-box; }
+body { font-family: 'Inter', system-ui, sans-serif; margin: 0; }

@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php artisan:*)",
+      "Bash(curl -s http://localhost:8000/customer/riwayat)",
+      "Bash(netstat -ano)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8000/)",
+      "Bash(mkdir -p /c/laragon/www/pos-cafe/app/Http/Controllers/Api)",
+      "Bash(mkdir -p /c/laragon/www/pos-cafe/resources/js/Pages/Customer/Payment)",
+      "Bash(mkdir -p /c/laragon/www/pos-cafe/resources/js/Pages/Customer/Order)",
+      "Bash(php -r \"phpinfo\\(\\);\")",
+      "Bash(/c/xampp/php/php -r \":*)",
+      "Bash(/c/xampp/php/php -r \"echo phpversion\\(\\); var_dump\\(extension_loaded\\(''gd''\\)\\);\")",
+      "Bash(node -e \":*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8000/manifest.json)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8000/sw.js)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8000/icons/icon-192.png)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8000/icons/icon-512.png)",
+      "Bash(/c/laragon/www/pos-cafe/README.md:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
