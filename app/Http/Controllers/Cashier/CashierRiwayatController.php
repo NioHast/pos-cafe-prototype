@@ -11,11 +11,12 @@ class CashierRiwayatController extends Controller
 {
     public function index(Request $request)
     {
-        $orders = Order::with(['items.menu', 'payment', 'cashier'])
-            ->where('status', 'completed')
-            ->when($request->search, fn($q) => $q->where('order_code', 'like', '%' . $request->search . '%'))
+        $orders = Order::with(['cashier'])
+            ->where('status', Order::STATUS_SELESAI)
+            ->when($request->search, fn($q) => $q->where('order_code', 'like', '%' . $request->search . '%')
+                ->orWhere('customer_name', 'like', '%' . $request->search . '%'))
             ->when($request->date,   fn($q) => $q->whereDate('created_at', $request->date))
-            ->when($request->method, fn($q) => $q->whereHas('payment', fn($p) => $p->where('payment_method', $request->method)))
+            ->when($request->method, fn($q) => $q->where('payment_method', $request->method))
             ->latest()
             ->get()
             ->map(fn($o) => [
@@ -23,10 +24,10 @@ class CashierRiwayatController extends Controller
                 'order_code'     => $o->order_code,
                 'created_at'     => $o->created_at->toISOString(),
                 'total_amount'   => $o->total_amount,
-                'payment_method' => $o->payment?->payment_method,
+                'payment_method' => $o->payment_method,
                 'cashier_name'   => $o->cashier?->name,
+                'customer_name'  => $o->customer_name,
                 'status'         => $o->status,
-                'payment_status' => $o->payment_status,
             ]);
 
         return Inertia::render('Cashier/RiwayatPesanan', [

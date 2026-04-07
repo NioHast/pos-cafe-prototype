@@ -8,7 +8,7 @@ export default function Profil({ user }) {
     const [logoutHover, setLogoutHover] = useState(false);
 
     function handleLogout() {
-        router.post(route('logout'));
+        router.post('/logout');
     }
 
     const roleLabel = {
@@ -25,7 +25,9 @@ export default function Profil({ user }) {
     ];
 
     return (
-        <CashierLayout title="Profil Saya">
+        <CashierLayout title="Profil Saya" fullscreen>
+            <div style={{ flex: 1, overflowY: 'auto', padding: 32, background: '#F8FAFC' }}>
+            <div style={{ background: '#FFFFFF', borderRadius: 12, padding: 24, border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(15,23,42,0.03)' }}>
 
             {/* ── Page header ── */}
             <div style={{ marginBottom: 28 }}>
@@ -148,6 +150,8 @@ export default function Profil({ user }) {
                     </div>
                 </div>
 
+            </div>
+            </div>
             </div>
         </CashierLayout>
     );

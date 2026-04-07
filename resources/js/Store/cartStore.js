@@ -18,6 +18,7 @@ const useCartStore = create((set, get) => ({
                 menuId:   menu.id,
                 name:     menu.name,
                 price:    Number(menu.price),
+                cashback: Number(menu.cashback ?? 0),
                 quantity: 1,
                 image:    menu.image ?? null,
             }],

@@ -1,20 +1,45 @@
 import { useState, useEffect, useMemo } from 'react';
 import { router } from '@inertiajs/react';
-import { Search, User, ShoppingCart } from 'lucide-react';
+import { Search, User } from 'lucide-react';
 import CustomerLayout from '@/Layouts/CustomerLayout';
-import CategoryChip from '@/Components/Customer/CategoryChip';
 import MenuCard from '@/Components/Customer/MenuCard';
 import useCart from '@/Hooks/useCart';
 
 export default function CustomerMenu({ categories, table }) {
     const [activeCategory, setActiveCategory] = useState(null);
     const [search,         setSearch]         = useState('');
+    const [customer,       setCustomer]       = useState(null);
 
-    const { addItem, setTable, totalQty } = useCart();
+    const { addItem, setTable } = useCart();
 
-    /* ── Persist table id into cart store on mount ── */
+    /* ── Guard: cek sessionStorage, redirect ke identitas jika belum ── */
     useEffect(() => {
-        setTable(table?.id ?? null);
+        try {
+            const saved = sessionStorage.getItem('w9_customer');
+            if (!saved) {
+                const fallbackTable = table?.id ?? '';
+                router.visit(fallbackTable ? `/order?table=${fallbackTable}` : '/order');
+                return;
+            }
+            const data = JSON.parse(saved);
+            if (!data.name || !data.phone) {
+                sessionStorage.removeItem('w9_customer');
+                const fallbackTable = table?.id ?? '';
+                router.visit(fallbackTable ? `/order?table=${fallbackTable}` : '/order');
+                return;
+            }
+            // Jika URL menyertakan ?table= tapi tidak cocok → redirect
+            if (table?.id && data.tableId !== table.id) {
+                sessionStorage.removeItem('w9_customer');
+                router.visit(`/order?table=${table.id}`);
+                return;
+            }
+            setCustomer(data);
+            // Gunakan tableId dari session jika URL tidak menyertakan ?table=
+            setTable(table?.id ?? data.tableId ?? null);
+        } catch (_) {
+            router.visit('/order');
+        }
     }, [table?.id]);
 
     /* ── Flatten + filter menus ── */
@@ -38,9 +63,7 @@ export default function CustomerMenu({ categories, table }) {
         setActiveCategory(prev => (prev === name ? null : name));
     }
 
-    function goToCart() {
-        router.visit(route('customer.cart'));
-    }
+    const firstName = customer?.name?.split(' ')[0] ?? 'Tamu';
 
     return (
         <CustomerLayout activeTab="menu">
@@ -69,41 +92,19 @@ export default function CustomerMenu({ categories, table }) {
                             <User size={26} color="#B5A898" />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                            <span style={{ fontSize: 13, fontWeight: 500, color: '#8C7B6B' }}>Hello Guest</span>
+                            <span style={{ fontSize: 13, fontWeight: 500, color: '#8C7B6B' }}>
+                                Selamat datang,
+                            </span>
                             <span style={{
                                 fontSize: 22, fontWeight: 700, color: '#2D2016',
                                 fontFamily: '"DM Sans", system-ui, sans-serif',
                                 lineHeight: 1.2,
                             }}>
-                                selamat Datang
+                                {firstName}
                             </span>
                         </div>
                     </div>
 
-                    {/* Cart badge */}
-                    {totalQty > 0 && (
-                        <button
-                            onClick={goToCart}
-                            style={{
-                                position: 'relative', background: '#E8763A',
-                                border: 'none', borderRadius: 14,
-                                width: 44, height: 44, cursor: 'pointer',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                flexShrink: 0,
-                            }}
-                        >
-                            <ShoppingCart size={22} color="#FFFFFF" />
-                            <span style={{
-                                position: 'absolute', top: -4, right: -4,
-                                background: '#2D2016', color: '#FFFFFF',
-                                borderRadius: '50%', width: 18, height: 18,
-                                fontSize: 10, fontWeight: 700,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            }}>
-                                {totalQty}
-                            </span>
-                        </button>
-                    )}
                 </div>
 
                 {/* Search bar */}
@@ -133,62 +134,63 @@ export default function CustomerMenu({ categories, table }) {
             {/* ── Content ── */}
             <div style={{ padding: '0 22px 22px', display: 'flex', flexDirection: 'column', gap: 22 }}>
 
-                {/* ── Kategori ── */}
+                {/* Kategori */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14, paddingTop: 22 }}>
-                    <div style={{
-                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    }}>
-                        <span style={{
-                            fontSize: 18, fontWeight: 700, color: '#2D2016',
-                            fontFamily: '"DM Sans", system-ui, sans-serif',
-                        }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: 18, fontWeight: 700, color: '#2D2016', fontFamily: '"DM Sans", system-ui, sans-serif' }}>
                             Kategori
                         </span>
-                        <span
-                            style={{ fontSize: 13, fontWeight: 600, color: '#E8763A', cursor: 'pointer' }}
-                            onClick={() => setActiveCategory(null)}
-                        >
+                        <span style={{ fontSize: 13, fontWeight: 600, color: '#E8763A', cursor: 'pointer' }} onClick={() => setActiveCategory(null)}>
                             Lihat Semua
                         </span>
                     </div>
-
+                    {/* Horizontal scroll chips */}
                     <div style={{
-                        display: 'flex', gap: 10,
+                        display: 'flex', gap: 8,
                         overflowX: 'auto', paddingBottom: 4,
+                        scrollbarWidth: 'none', msOverflowStyle: 'none',
+                        margin: '0 -22px', padding: '0 22px 4px',
                     }}>
-                        {categories.map(c => (
-                            <CategoryChip
-                                key={c.id}
-                                label={c.name}
-                                active={activeCategory === c.name}
-                                onClick={() => toggleCategory(c.name)}
-                            />
-                        ))}
+                        {categories.map(c => {
+                            const active = activeCategory === c.name;
+                            return (
+                                <button
+                                    key={c.id}
+                                    onClick={() => toggleCategory(c.name)}
+                                    style={{
+                                        flexShrink: 0,
+                                        background: active ? '#E8763A' : '#FFFFFF',
+                                        borderRadius: 50,
+                                        border: active ? 'none' : '1px solid #EDE8E2',
+                                        padding: '8px 18px',
+                                        fontSize: 13,
+                                        fontWeight: active ? 700 : 600,
+                                        color: active ? '#FFFFFF' : '#8C7B6B',
+                                        fontFamily: 'Outfit, system-ui, sans-serif',
+                                        cursor: 'pointer',
+                                        boxShadow: active ? '0 3px 10px rgba(232,118,58,0.30)' : 'none',
+                                        transition: 'all 0.15s',
+                                        whiteSpace: 'nowrap',
+                                    }}
+                                >
+                                    {c.name}
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
 
-                {/* ── Menu Populer ── */}
+                {/* Menu */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                    <span style={{
-                        fontSize: 18, fontWeight: 700, color: '#2D2016',
-                        fontFamily: '"DM Sans", system-ui, sans-serif',
-                    }}>
+                    <span style={{ fontSize: 18, fontWeight: 700, color: '#2D2016', fontFamily: '"DM Sans", system-ui, sans-serif' }}>
                         {activeCategory ? activeCategory : 'Menu Populer'}
                     </span>
-
                     {filteredMenus.length === 0 ? (
-                        <div style={{
-                            textAlign: 'center', color: '#B5A898',
-                            padding: '32px 0', fontSize: 14,
-                        }}>
+                        <div style={{ textAlign: 'center', color: '#B5A898', padding: '32px 0', fontSize: 14 }}>
                             Tidak ada menu ditemukan
                         </div>
                     ) : (
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(2, 1fr)',
-                            gap: 14,
-                        }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
                             {filteredMenus.map(menu => (
                                 <MenuCard key={menu.id} menu={menu} onAdd={addItem} />
                             ))}

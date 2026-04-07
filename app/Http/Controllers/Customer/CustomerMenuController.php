@@ -10,6 +10,14 @@ use Inertia\Inertia;
 
 class CustomerMenuController extends Controller
 {
+    public function showIdentitas(Request $request)
+    {
+        $tableId = $request->query('table');
+        $table   = $tableId ? CafeTable::find($tableId) : null;
+
+        return Inertia::render('Customer/Identitas', ['table' => $table]);
+    }
+
     public function index(Request $request)
     {
         $categories = Category::with([

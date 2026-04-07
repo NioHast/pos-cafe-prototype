@@ -14,11 +14,11 @@ export default function CustomerLogin() {
 
     function handleSubmit(e) {
         e.preventDefault();
-        post(route('customer.auth.attempt'));
+        post('/customer/login');
     }
 
     return (
-        <CustomerLayout activeTab="akun" showBottomNav={false}>
+        <CustomerLayout activeTab="akun" >
             <div style={{
                 minHeight: '100vh', background: '#FAF8F5',
                 display: 'flex', flexDirection: 'column',
@@ -33,20 +33,15 @@ export default function CustomerLogin() {
 
                     {/* ── Logo ── */}
                     <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-                        <div style={{
-                            width: 88, height: 88, borderRadius: 22,
-                            background: '#1A2332',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            boxShadow: '0 4px 16px rgba(45,32,22,0.18)',
-                        }}>
-                            <span style={{
-                                color: '#FFFFFF', fontSize: 28,
-                                fontStyle: 'italic', fontFamily: 'Georgia, serif',
-                                fontWeight: 700, letterSpacing: '-1px',
-                            }}>
-                                w9
-                            </span>
-                        </div>
+                        <img
+                            src="/images/logo.jpg"
+                            alt="W9 Cafe"
+                            style={{
+                                width: 100, height: 100, borderRadius: 22,
+                                objectFit: 'cover',
+                                boxShadow: '0 4px 16px rgba(45,32,22,0.18)',
+                            }}
+                        />
                         <div style={{
                             fontSize: 26, fontWeight: 700, color: '#2D2016',
                             lineHeight: 1.1, marginTop: 0,

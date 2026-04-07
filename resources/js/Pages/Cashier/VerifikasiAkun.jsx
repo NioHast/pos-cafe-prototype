@@ -199,11 +199,11 @@ function StudentRow({ student, no, status }) {
     const { patch, processing } = useForm();
 
     function handleApprove() {
-        patch(route('cashier.verifikasi.approve', student.id));
+        patch(`/cashier/verifikasi/${student.id}/approve`);
     }
 
     function handleReject() {
-        patch(route('cashier.verifikasi.reject', student.id));
+        patch(`/cashier/verifikasi/${student.id}/reject`);
     }
 
     const isPending = status === 'menunggu';

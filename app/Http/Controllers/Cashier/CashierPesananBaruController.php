@@ -27,22 +27,30 @@ class CashierPesananBaruController extends Controller
     public function store(StoreOrderRequest $request)
     {
         DB::transaction(function () use ($request) {
+            $isBayarNanti = $request->payment_method === 'bayar_nanti';
+
             $order = Order::create([
-                'cashier_id' => auth()->id(),
-                'order_type' => 'cashier',
-                'status'     => 'confirmed',
+                'cashier_id'     => auth()->id(),
+                'order_type'     => 'cashier',
+                'payment_method' => $request->payment_method,
+                'customer_name'  => $request->customer_name,
+                'status'         => Order::STATUS_DIPROSES,
+                'is_paid'        => !$isBayarNanti,
             ]);
 
+            $isMahasiswa = (bool) $request->input('is_mahasiswa', false);
             $total = 0;
 
             foreach ($request->items as $item) {
-                $menu     = Menu::findOrFail($item['menu_id']);
-                $subtotal = $menu->price * $item['quantity'];
+                $menu      = Menu::findOrFail($item['menu_id']);
+                $cashback  = ($isMahasiswa && $menu->cashback > 0) ? $menu->cashback : 0;
+                $unitPrice = $menu->price - $cashback;
+                $subtotal  = $unitPrice * $item['quantity'];
 
                 $order->items()->create([
                     'menu_id'    => $menu->id,
                     'quantity'   => $item['quantity'],
-                    'unit_price' => $menu->price,
+                    'unit_price' => $unitPrice,
                     'subtotal'   => $subtotal,
                 ]);
 
@@ -50,23 +58,6 @@ class CashierPesananBaruController extends Controller
             }
 
             $order->update(['total_amount' => $total]);
-
-            if ($request->payment_method) {
-                $order->payment()->create([
-                    'payment_method'  => $request->payment_method,
-                    'payment_gateway' => 'manual',
-                    'amount'          => $total,
-                    'status'          => 'success',
-                    'paid_at'         => now(),
-                ]);
-
-                $order->update([
-                    'payment_status' => 'paid',
-                    'status'         => 'completed',
-                ]);
-            }
-
-            return $order;
         });
 
         return back()->with('success', 'Pesanan berhasil dibuat');

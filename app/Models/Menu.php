@@ -12,6 +12,7 @@ class Menu extends Model
         'slug',
         'description',
         'price',
+        'cashback',
         'image',
         'is_available',
         'is_student_discount',
@@ -22,6 +23,7 @@ class Menu extends Model
     {
         return [
             'price'               => 'decimal:2',
+            'cashback'            => 'integer',
             'student_price'       => 'decimal:2',
             'is_available'        => 'boolean',
             'is_student_discount' => 'boolean',

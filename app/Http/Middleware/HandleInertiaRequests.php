@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Order;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -49,6 +50,9 @@ class HandleInertiaRequests extends Middleware
                 'success' => session('success'),
                 'error'   => session('error'),
             ],
+            'pendingOrderCount' => $request->user() && in_array($request->user()->role, ['cashier', 'admin'])
+                ? Order::where('status', Order::STATUS_PENDING)->count()
+                : 0,
         ]);
     }
 }

@@ -87,7 +87,7 @@ export default function OrderStatus({ order }) {
 
                 {/* Back button */}
                 <button
-                    onClick={() => router.visit(route('customer.menu'))}
+                    onClick={() => router.visit('/customer/menu')}
                     style={{
                         background: '#E8763A', color: '#FFFFFF',
                         border: 'none', borderRadius: 50,

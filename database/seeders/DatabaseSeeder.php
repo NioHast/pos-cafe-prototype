@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             MenuSeeder::class,
             CafeTableSeeder::class,
+            SettingSeeder::class,
         ]);
     }
 }

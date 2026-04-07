@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
 {
+    const STATUS_PENDING  = 'pending';
+    const STATUS_DIPROSES = 'diproses';
+    const STATUS_SELESAI  = 'selesai';
+
     protected static function boot(): void
     {
         parent::boot();
@@ -18,12 +22,16 @@ class Order extends Model
 
     protected $fillable = [
         'order_code',
+        'customer_name',
+        'customer_phone',
         'table_id',
-        'customer_id',
         'cashier_id',
         'status',
         'order_type',
-        'payment_status',
+        'payment_method',
+        'payment_proof',
+        'rejection_note',
+        'is_paid',
         'total_amount',
         'notes',
     ];
@@ -32,17 +40,13 @@ class Order extends Model
     {
         return [
             'total_amount' => 'decimal:2',
+            'is_paid'      => 'boolean',
         ];
     }
 
     public function cafeTable()
     {
         return $this->belongsTo(CafeTable::class, 'table_id');
-    }
-
-    public function customer()
-    {
-        return $this->belongsTo(User::class, 'customer_id');
     }
 
     public function cashier()
@@ -55,8 +59,18 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
-    public function payment()
+    public function isCashPending(): bool
     {
-        return $this->hasOne(Payment::class);
+        return $this->status === self::STATUS_PENDING && $this->payment_method === 'cash';
+    }
+
+    public function isQrisPending(): bool
+    {
+        return $this->status === self::STATUS_PENDING && $this->payment_method === 'qris';
+    }
+
+    public function isActive(): bool
+    {
+        return $this->status !== self::STATUS_SELESAI;
     }
 }

@@ -13,9 +13,9 @@ class CashierVerifikasiController extends Controller
         $students = User::where('role', 'customer')->latest()->get();
 
         $counts = [
-            'menunggu'  => $students->whereNull('is_student_verified')->count()
-                         + $students->where('is_student_verified', false)->count(),
+            'menunggu'  => $students->whereNull('is_student_verified')->count(),
             'disetujui' => $students->where('is_student_verified', true)->count(),
+            'ditolak'   => $students->where('is_student_verified', false)->count(),
         ];
 
         $studentsData = $students->map(fn($s) => [

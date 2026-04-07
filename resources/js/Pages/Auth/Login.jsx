@@ -9,7 +9,7 @@ export default function Login() {
 
     function handleSubmit(e) {
         e.preventDefault();
-        post(route('login.attempt'));
+        post('/login');
     }
 
     return (
@@ -26,24 +26,17 @@ export default function Login() {
                 gap: 14,
             }}>
                 {/* Logo */}
-                <div style={{
-                    width: 80,
-                    height: 80,
-                    background: '#1E293B',
-                    borderRadius: 20,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.30)',
-                }}>
-                    <span style={{
-                        color: 'white',
-                        fontSize: 26,
-                        fontFamily: 'Georgia, serif',
-                        fontStyle: 'italic',
-                        fontWeight: 700,
-                    }}>w9</span>
-                </div>
+                <img
+                    src="/images/logo.jpg"
+                    alt="W9 Cafe"
+                    style={{
+                        width: 120,
+                        height: 120,
+                        borderRadius: 24,
+                        objectFit: 'cover',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.30)',
+                    }}
+                />
 
                 <h1 style={{
                     color: 'white',

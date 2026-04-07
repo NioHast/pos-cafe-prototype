@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
+import axios from 'axios';
 import {
     LayoutDashboard,
     ShoppingCart,
     ClipboardList,
     History,
-    UserCheck,
     User,
     LogOut,
     CheckCircle,
@@ -13,16 +13,17 @@ import {
 } from 'lucide-react';
 
 const navItems = [
-    { label: 'Dashboard',       route: 'cashier.dashboard',     icon: LayoutDashboard },
-    { label: 'Pesanan Baru',    route: 'cashier.pesanan-baru',  icon: ShoppingCart },
-    { label: 'Pesanan Aktif',   route: 'cashier.pesanan-aktif', icon: ClipboardList },
-    { label: 'Riwayat Pesanan', route: 'cashier.riwayat',       icon: History },
-    { label: 'Verifikasi Akun', route: 'cashier.verifikasi',    icon: UserCheck },
-    { label: 'Profil',          route: 'cashier.profil',        icon: User },
+    { label: 'Dashboard',       href: '/cashier/dashboard',     icon: LayoutDashboard },
+    { label: 'Pesanan Baru',    href: '/cashier/pesanan-baru',  icon: ShoppingCart },
+    { label: 'Pesanan Aktif',   href: '/cashier/pesanan-aktif', icon: ClipboardList },
+    { label: 'Riwayat Pesanan', href: '/cashier/riwayat',       icon: History },
+    { label: 'Profil',          href: '/cashier/profil',        icon: User },
 ];
 
-export default function CashierLayout({ children, title = 'Dashboard' }) {
-    const { flash } = usePage().props;
+export default function CashierLayout({ children, title = 'Dashboard', fullscreen = false }) {
+    const { flash, pendingOrderCount: initialCount } = usePage().props;
+    const [pendingCount, setPendingCount] = useState(initialCount ?? 0);
+    const intervalRef = useRef(null);
     const [toast, setToast] = useState(null);
 
     useEffect(() => {
@@ -37,6 +38,20 @@ export default function CashierLayout({ children, title = 'Dashboard' }) {
             return () => clearTimeout(t);
         }
     }, [flash]);
+
+    useEffect(() => {
+        setPendingCount(initialCount ?? 0);
+    }, [initialCount]);
+
+    useEffect(() => {
+        intervalRef.current = setInterval(async () => {
+            try {
+                const { data } = await axios.get('/cashier/pending-count');
+                setPendingCount(data.count);
+            } catch {/* silent */}
+        }, 5000);
+        return () => clearInterval(intervalRef.current);
+    }, []);
 
     return (
         <div style={{ display: 'flex', minHeight: '100vh', fontFamily: "'Inter', system-ui, sans-serif" }}>
@@ -59,36 +74,30 @@ export default function CashierLayout({ children, title = 'Dashboard' }) {
                     alignItems: 'center',
                     gap: 12,
                 }}>
-                    <div style={{
-                        width: 36,
-                        height: 36,
-                        background: '#1E293B',
-                        borderRadius: 10,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: '0 2px 10px rgba(0,0,0,0.20)',
-                        flexShrink: 0,
-                    }}>
-                        <span style={{
-                            color: 'white',
-                            fontSize: 13,
-                            fontStyle: 'italic',
-                            fontWeight: 700,
-                            fontFamily: 'Georgia, serif',
-                        }}>w9</span>
-                    </div>
+                    <img
+                        src="/images/logo.jpg"
+                        alt="W9 Cafe"
+                        style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 10,
+                            objectFit: 'cover',
+                            flexShrink: 0,
+                            boxShadow: '0 2px 10px rgba(0,0,0,0.20)',
+                        }}
+                    />
                     <span style={{ color: 'white', fontWeight: 700, fontSize: 16 }}>W9 Cafe</span>
                 </div>
 
                 {/* Nav */}
                 <nav style={{ flex: 1, padding: '20px 20px 0', display: 'flex', flexDirection: 'column', gap: 4, overflowY: 'auto' }}>
-                    {navItems.map(({ label, route: r, icon: Icon }) => {
-                        const active = route().current(r);
+                    {navItems.map(({ label, href, icon: Icon }) => {
+                        const active = window.location.pathname === href;
+                        const showBadge = label === 'Pesanan Aktif' && pendingCount > 0;
                         return (
                             <Link
-                                key={r}
-                                href={route(r)}
+                                key={href}
+                                href={href}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
@@ -107,7 +116,27 @@ export default function CashierLayout({ children, title = 'Dashboard' }) {
                                 onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
                             >
                                 <Icon size={20} />
-                                {label}
+                                <span style={{ flex: 1 }}>{label}</span>
+                                {showBadge && (
+                                    <span style={{
+                                        background: '#EF4444',
+                                        color: '#FFFFFF',
+                                        borderRadius: '50%',
+                                        minWidth: 20,
+                                        height: 20,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: 11,
+                                        fontWeight: 700,
+                                        lineHeight: 1,
+                                        padding: pendingCount > 9 ? '0 5px' : 0,
+                                        borderRadius: pendingCount > 9 ? 10 : '50%',
+                                        flexShrink: 0,
+                                    }}>
+                                        {pendingCount > 99 ? '99+' : pendingCount}
+                                    </span>
+                                )}
                             </Link>
                         );
                     })}
@@ -116,7 +145,7 @@ export default function CashierLayout({ children, title = 'Dashboard' }) {
                 {/* Logout */}
                 <div style={{ padding: '12px 20px 24px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                     <button
-                        onClick={() => router.post(route('logout'))}
+                        onClick={() => router.post('/logout')}
                         style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -143,18 +172,24 @@ export default function CashierLayout({ children, title = 'Dashboard' }) {
             </aside>
 
             {/* ── MAIN CONTENT ── */}
-            <main style={{ flex: 1, background: '#F8FAFC', padding: 32, minHeight: '100vh' }}>
-                <div style={{
-                    background: 'white',
-                    borderRadius: 12,
-                    padding: 24,
-                    minHeight: 'calc(100vh - 64px)',
-                    border: '1px solid #E2E8F0',
-                    boxShadow: '0 2px 8px rgba(15,23,42,0.03)',
-                }}>
+            {fullscreen ? (
+                <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', height: '100vh' }}>
                     {children}
-                </div>
-            </main>
+                </main>
+            ) : (
+                <main style={{ flex: 1, background: '#F8FAFC', padding: 32, minHeight: '100vh' }}>
+                    <div style={{
+                        background: 'white',
+                        borderRadius: 12,
+                        padding: 24,
+                        minHeight: 'calc(100vh - 64px)',
+                        border: '1px solid #E2E8F0',
+                        boxShadow: '0 2px 8px rgba(15,23,42,0.03)',
+                    }}>
+                        {children}
+                    </div>
+                </main>
+            )}
 
             {/* ── TOAST ── */}
             {toast && (

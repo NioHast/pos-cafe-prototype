@@ -9,7 +9,9 @@ export default function Dashboard({ totalPenjualan, jumlahTransaksi, pesananAkti
     const now = new Date();
 
     return (
-        <CashierLayout title="Dashboard">
+        <CashierLayout title="Dashboard" fullscreen>
+            <div style={{ flex: 1, overflowY: 'auto', padding: 32, background: '#F8FAFC' }}>
+            <div style={{ background: '#FFFFFF', borderRadius: 12, padding: 24, border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(15,23,42,0.03)' }}>
 
             {/* ── A. Header ── */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
@@ -52,7 +54,7 @@ export default function Dashboard({ totalPenjualan, jumlahTransaksi, pesananAkti
             {/* ── C. Quick Actions ── */}
             <div style={{ display: 'flex', gap: 12, marginBottom: 28 }}>
                 <button
-                    onClick={() => router.visit(route('cashier.pesanan-baru'))}
+                    onClick={() => router.visit('/cashier/pesanan-baru')}
                     style={{
                         display: 'flex', alignItems: 'center', gap: 8,
                         height: 44, padding: '0 20px',
@@ -67,7 +69,7 @@ export default function Dashboard({ totalPenjualan, jumlahTransaksi, pesananAkti
                 </button>
 
                 <button
-                    onClick={() => router.visit(route('cashier.pesanan-aktif'))}
+                    onClick={() => router.visit('/cashier/pesanan-aktif')}
                     style={{
                         display: 'flex', alignItems: 'center', gap: 8,
                         height: 44, padding: '0 20px',
@@ -82,7 +84,7 @@ export default function Dashboard({ totalPenjualan, jumlahTransaksi, pesananAkti
                 </button>
 
                 <button
-                    onClick={() => router.visit(route('cashier.riwayat'))}
+                    onClick={() => router.visit('/cashier/riwayat')}
                     style={{
                         display: 'flex', alignItems: 'center', gap: 8,
                         height: 44, padding: '0 20px',
@@ -105,7 +107,7 @@ export default function Dashboard({ totalPenjualan, jumlahTransaksi, pesananAkti
                         Transaksi Terbaru
                     </h2>
                     <Link
-                        href={route('cashier.riwayat')}
+                        href="/cashier/riwayat"
                         style={{ fontSize: 13, fontWeight: 500, color: '#3B6FD4', textDecoration: 'none' }}
                     >
                         Lihat Semua →
@@ -183,6 +185,8 @@ export default function Dashboard({ totalPenjualan, jumlahTransaksi, pesananAkti
                 </div>
             </div>
 
+            </div>
+            </div>
         </CashierLayout>
     );
 }

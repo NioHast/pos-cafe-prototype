@@ -17,7 +17,8 @@ class StoreOrderRequest extends FormRequest
             'items'                  => 'required|array|min:1',
             'items.*.menu_id'        => 'required|integer|exists:menus,id',
             'items.*.quantity'       => 'required|integer|min:1',
-            'payment_method'         => 'nullable|in:cash,qris,ewallet,transfer',
+            'payment_method'         => 'required|in:cash,qris,bayar_nanti',
+            'customer_name'          => 'nullable|string|max:100',
         ];
     }
 

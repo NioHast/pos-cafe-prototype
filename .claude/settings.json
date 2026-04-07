@@ -18,7 +18,40 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8000/icons/icon-512.png)",
       "Bash(/c/laragon/www/pos-cafe/README.md:*)",
       "Bash(git init:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git config:*)",
+      "Bash(curl -s http://127.0.0.1:8000/login)",
+      "Bash(curl -s -c /tmp/cookies.txt -b /tmp/cookies.txt http://127.0.0.1:8000/login -o /tmp/login_page.html)",
+      "Read(//tmp/**)",
+      "Bash(curl -s -c /tmp/cookies.txt -b /tmp/cookies.txt -X POST http://127.0.0.1:8000/login -H \"Content-Type: application/json\" -H \"X-Inertia: true\" -H \"X-Inertia-Version: 1\" -d '{\"\"\"\"email\"\"\"\":\"\"\"\"kasir@w9cafe.com\"\"\"\",\"\"\"\"password\"\"\"\":\"\"\"\"password\"\"\"\"}' -w \"\\\\nHTTP_STATUS: %{http_code}\")",
+      "Bash(mkdir -p /c/laragon/www/pos-cafe/public/images)",
+      "Bash(cp \"C:/Users/sitor/OneDrive/Documents/Gambar Capstone.jpeg\" /c/laragon/www/pos-cafe/public/images/logo.jpg)",
+      "Bash(echo \"copied: $?\")",
+      "Bash(cp \"C:/Users/sitor/OneDrive/Documents/Gambar Capstone.jpeg\" /c/laragon/www/pos-cafe/public/icons/icon-192.png)",
+      "Bash(cp \"C:/Users/sitor/OneDrive/Documents/Gambar Capstone.jpeg\" /c/laragon/www/pos-cafe/public/icons/icon-512.png)",
+      "Bash(npm install:*)",
+      "Bash(mkdir -p storage/app/public/qris)",
+      "Bash(mkdir -p storage/app/public/proofs)",
+      "Bash(grep -n '$bg-surface\\\\|$text-primary\\\\|$status-negative\\\\|$status-positive\\\\|$accent-primary\\\\|$border-subtle\\\\|tokens\\\\|colors' 'C:\\\\Users\\\\sitor\\\\OneDrive\\\\Documents\\\\capstone.pen')",
+      "Bash(grep -n '\"name\": \"$bg-primary\"\\\\|\"name\": \"$text-primary\"\\\\|\"name\": \"$accent\"\\\\|\"colorTokens\"' 'C:\\\\Users\\\\sitor\\\\OneDrive\\\\Documents\\\\capstone.pen')",
+      "Read(//c/laragon/www/pos-cafe/**)",
+      "Bash(python3 -c ':*)",
+      "Bash(node -e ':*)",
+      "Bash(grep -l \"CashierLayout\" c:/laragon/www/pos-cafe/resources/js/Pages/Cashier/*.jsx c:/laragon/www/pos-cafe/resources/js/Pages/Cashier/**/*.jsx)",
+      "Bash(python3 -c \"import sys,json; lines=sys.stdin.read\\(\\).strip\\(\\).split\\('\\\\n'\\); [print\\(json.loads\\(l\\).get\\('content',''\\)[:500] if isinstance\\(json.loads\\(l\\).get\\('content',''\\),str\\) else str\\(json.loads\\(l\\).get\\('content',''\\)\\)[:500]\\) for l in lines[-5:] if l]\")",
+      "Read(//c/Users/sitor/.claude/projects/c--laragon-www-pos-cafe/**)",
+      "Read(//c/Users/sitor/Downloads/pos-cafe-prototype-main/**)",
+      "Bash(php --version)",
+      "Bash(composer --version)",
+      "Bash(composer require:*)",
+      "Bash(composer show:*)",
+      "Bash(composer dump-autoload:*)",
+      "Bash(php -r \"require 'vendor/autoload.php'; echo class_exists\\('BladeUI\\\\Heroicons\\\\BladeHeroiconsServiceProvider'\\) ? 'found' : 'not found';\")",
+      "Bash(php composer.phar dump-autoload -o)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\sitor\\OneDrive\\Documents"
     ]
   }
 }
