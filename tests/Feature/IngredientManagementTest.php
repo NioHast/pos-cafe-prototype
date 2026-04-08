@@ -10,7 +10,9 @@ use App\Models\MenuIngredient;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Role;
+use App\Models\StockMovement;
 use App\Models\User;
+use App\Models\WasteRecord;
 use App\Observers\OrderObserver;
 use App\Services\InventoryService;
 use App\Services\OrderCalculationService;
@@ -238,9 +240,66 @@ class IngredientManagementTest extends TestCase
         $susuStock = $this->susu->getTotalStock();
         $this->assertEquals(4700, $susuStock);
 
+        $this->assertDatabaseHas('stock_movements', [
+            'order_id' => $order->id,
+            'order_item_id' => $order->items()->first()->id,
+            'ingredient_id' => $this->kopi->id,
+            'movement_type' => 'sale',
+        ]);
+
+        $kopiMovement = StockMovement::where('order_id', $order->id)
+            ->where('ingredient_id', $this->kopi->id)
+            ->first();
+
+        $this->assertNotNull($kopiMovement);
+        $this->assertEquals(-30, (float) $kopiMovement->quantity_change);
+
         // Gula: 2 porsi × 10g = 20g → 2000 - 20 = 1980
         $gulaStock = $this->gula->getTotalStock();
         $this->assertEquals(1980, $gulaStock);
+    }
+
+
+    public function test_waste_record_creation_reduces_stock_and_logs_movement(): void
+    {
+        $before = $this->kopi->getTotalStock();
+
+        $waste = WasteRecord::create([
+            'ingredient_id' => $this->kopi->id,
+            'quantity' => 25,
+            'reason' => 'Spillage',
+            'recorded_by' => $this->cashier->id,
+        ]);
+
+        $this->kopi->refresh();
+        $this->assertEquals($before - 25, $this->kopi->getTotalStock());
+
+        $this->assertDatabaseHas('stock_movements', [
+            'waste_record_id' => $waste->id,
+            'ingredient_id' => $this->kopi->id,
+            'movement_type' => 'waste',
+            'source_type' => 'waste_record',
+        ]);
+    }
+
+    public function test_menu_stock_flag_updates_when_recipe_changes(): void
+    {
+        $this->menuTanpaResep->refresh();
+        $this->assertFalse((bool) $this->menuTanpaResep->is_stock_calculated);
+
+        $recipe = MenuIngredient::create([
+            'menu_id' => $this->menuTanpaResep->id,
+            'ingredient_id' => $this->kopi->id,
+            'quantity_used' => 5,
+        ]);
+
+        $this->menuTanpaResep->refresh();
+        $this->assertTrue((bool) $this->menuTanpaResep->is_stock_calculated);
+
+        $recipe->delete();
+
+        $this->menuTanpaResep->refresh();
+        $this->assertFalse((bool) $this->menuTanpaResep->is_stock_calculated);
     }
 
     public function test_stock_not_reduced_for_menu_without_recipe(): void

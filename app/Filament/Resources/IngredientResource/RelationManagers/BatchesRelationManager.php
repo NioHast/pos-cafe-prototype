@@ -38,14 +38,15 @@ class BatchesRelationManager extends RelationManager
                     ->required()
                     ->numeric()
                     ->minValue(0)
-                    ->step(0.01)
                     ->prefix('Rp'),
             ]);
     }
 
     public function table(Table $table): Table
     {
-        return $table
+        $unit = $this->getOwnerRecord()->unit;
+
+        return $table   
             ->recordTitleAttribute('id')
             ->columns([
                 Tables\Columns\TextColumn::make('id')
@@ -54,9 +55,9 @@ class BatchesRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('quantity')
                     ->label('Jumlah')
                     ->sortable()
-                    ->suffix(fn ($record) => ' ' . $record->ingredient->unit),
+                    ->suffix(' ' . $unit),
                 Tables\Columns\TextColumn::make('expiry_date')
-                    ->label('Kadaluarsa')
+                    ->label('Kadaluarsa') 
                     ->date()
                     ->sortable()
                     ->color(fn ($record) => $record->expiry_date->isPast() ? 'danger' : ($record->expiry_date->diffInDays(now()) < 7 ? 'warning' : 'success')),

@@ -22,12 +22,14 @@ class Menu extends Model
         'status',
         'category_id',
         'is_active',
+        'is_stock_calculated',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
         'student_price' => 'decimal:2',
         'is_active' => 'boolean',
+        'is_stock_calculated' => 'boolean',
     ];
 
     /**
@@ -98,5 +100,15 @@ class Menu extends Model
     public function isAvailable(): bool
     {
         return $this->status === 'available';
+    }
+
+    /**
+     * Refresh stock-calculated flag based on recipe existence.
+     */
+    public function refreshStockCalculatedFlag(): void
+    {
+        $this->update([
+            'is_stock_calculated' => $this->menuIngredients()->exists(),
+        ]);
     }
 }

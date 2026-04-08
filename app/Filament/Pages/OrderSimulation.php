@@ -2,9 +2,11 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\AppliedPromotion;
 use App\Models\Menu;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Promotion;
 use App\Models\User;
 use App\Observers\OrderObserver;
 use App\Services\OrderCalculationService;
@@ -39,6 +41,7 @@ class OrderSimulation extends Page implements HasForms
     {
         $this->form->fill([
             'payment_method' => 'cash',
+            'promotion_strategy' => 'single_best',
         ]);
     }
 
@@ -73,6 +76,31 @@ class OrderSimulation extends Page implements HasForms
                 ])
                 ->required()
                 ->native(false),
+
+            Select::make('promotion_strategy')
+                ->label('Promotion Mode')
+                ->options([
+                    'single_best' => 'Pilih Satu Promo Terbaik',
+                    'stacking' => 'Tumpuk Promo Terpilih',
+                ])
+                ->default('single_best')
+                ->required()
+                ->native(false)
+                ->helperText('Kasir bisa pilih satu promo terbaik atau kombinasikan promo terpilih'),
+
+            Select::make('promotion_ids')
+                ->label('Promosi yang Dipakai')
+                ->options(
+                    Promotion::query()
+                        ->where('status', 'active')
+                        ->whereDate('start_date', '<=', now())
+                        ->whereDate('end_date', '>=', now())
+                        ->pluck('name', 'id')
+                )
+                ->multiple()
+                ->searchable()
+                ->native(false)
+                ->helperText('Kosongkan untuk auto-select berdasarkan menu dan rule promo'),
 
             Repeater::make('items')
                 ->label('Order Items')
@@ -131,14 +159,49 @@ class OrderSimulation extends Page implements HasForms
             ]));
 
             // Create order items with snapshots
+            $aggregatedPromotions = [];
             foreach ($data['items'] as $item) {
                 $menu = Menu::findOrFail($item['menu_id']);
-                $itemData = $calcService->calculateItem($menu, (int) $item['quantity'], $customer);
+                $itemData = $calcService->calculateItem(
+                    $menu,
+                    (int) $item['quantity'],
+                    $customer,
+                    $data['promotion_ids'] ?? [],
+                    $data['promotion_strategy'] ?? 'single_best',
+                    true,
+                );
+
+                $itemPromotions = $itemData['applied_promotions'] ?? [];
+                unset($itemData['applied_promotions']);
 
                 OrderItem::create(array_merge($itemData, [
                     'order_id' => $order->id,
                     'handled_by' => auth()->id(),
                 ]));
+
+                foreach ($itemPromotions as $promo) {
+                    $promoId = (int) $promo['promotion_id'];
+                    if (!isset($aggregatedPromotions[$promoId])) {
+                        $aggregatedPromotions[$promoId] = [
+                            'order_id' => $order->id,
+                            'promotion_id' => $promoId,
+                            'discount_type' => $promo['discount_type'],
+                            'discount_value' => $promo['discount_value'],
+                            'discount_amount' => 0,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+                    }
+
+                    $aggregatedPromotions[$promoId]['discount_amount'] += $promo['discount_amount'];
+                }
+            }
+
+            if (!empty($aggregatedPromotions)) {
+                AppliedPromotion::insert(array_values($aggregatedPromotions));
+
+                Promotion::whereIn('id', array_keys($aggregatedPromotions))
+                    ->increment('usage_count');
             }
 
             // Recalculate totals and reduce stock
@@ -164,6 +227,7 @@ class OrderSimulation extends Page implements HasForms
             // Reset form
             $this->form->fill([
                 'payment_method' => 'cash',
+                'promotion_strategy' => 'single_best',
             ]);
 
         } catch (\Exception $e) {

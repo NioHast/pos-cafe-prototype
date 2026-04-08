@@ -18,4 +18,9 @@ class EditIngredient extends EditRecord
             Actions\RestoreAction::make(),
         ];
     }
+
+    public function getRelationManagers(): array
+    {
+        return [];
+    }
 }

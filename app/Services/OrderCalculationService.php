@@ -4,11 +4,16 @@ namespace App\Services;
 
 use App\Models\Menu;
 use App\Models\Order;
-use App\Models\OrderItem;
+use App\Models\Promotion;
 use App\Models\User;
+use Illuminate\Support\Collection;
 
 class OrderCalculationService
 {
+    public function __construct(
+        protected PromotionService $promotionService,
+    ) {}
+
     /**
      * Build snapshot data for a single order item.
      *
@@ -20,7 +25,14 @@ class OrderCalculationService
      * @param  User|null $customer The customer (null = guest)
      * @return array     Snapshot data ready for OrderItem::create()
      */
-    public function calculateItem(Menu $menu, int $quantity, ?User $customer = null): array
+    public function calculateItem(
+        Menu $menu,
+        int $quantity,
+        ?User $customer = null,
+        array $selectedPromotionIds = [],
+        string $promotionStrategy = 'single_best',
+        bool $includePromotionMeta = false,
+    ): array
     {
         $isStudent = $customer?->isStudent() ?? false;
 
@@ -32,17 +44,67 @@ class OrderCalculationService
         $basePrice = $menu->price;
         $discountAmount = 0;
         $discountName = null;
+        $appliedPromotions = [];
 
-        // TODO: Apply item-level promotions here in future
-        // $activePromo = $this->findApplicablePromo($menu);
-        // if ($activePromo) {
-        //     $discountAmount = $this->calculatePromoDiscount($activePromo, $price, $quantity);
-        //     $discountName = $activePromo->name;
-        // }
+        $applicablePromotions = $this->promotionService->getApplicablePromotionsForMenu($menu);
+
+        if (!empty($selectedPromotionIds)) {
+            $selectedMap = collect($selectedPromotionIds)->map(fn ($id) => (int) $id)->flip();
+            $applicablePromotions = $applicablePromotions
+                ->filter(fn (Promotion $promotion) => $selectedMap->has((int) $promotion->id))
+                ->values();
+        }
+
+        if ($applicablePromotions->isNotEmpty()) {
+            if ($promotionStrategy === 'stacking') {
+                $remainingBase = (float) ($price * $quantity);
+
+                foreach ($applicablePromotions as $promotion) {
+                    if ($remainingBase <= 0) {
+                        break;
+                    }
+
+                    $currentUnitPrice = $quantity > 0 ? $remainingBase / $quantity : 0;
+                    $promoDiscount = $this->promotionService->calculateDiscountAmount($promotion, $currentUnitPrice, $quantity);
+                    $promoDiscount = min($remainingBase, $promoDiscount);
+
+                    if ($promoDiscount <= 0) {
+                        continue;
+                    }
+
+                    $remainingBase -= $promoDiscount;
+                    $discountAmount += $promoDiscount;
+                    $appliedPromotions[] = [
+                        'promotion_id' => $promotion->id,
+                        'discount_type' => $promotion->type,
+                        'discount_value' => (float) $promotion->discount_value,
+                        'discount_amount' => $promoDiscount,
+                        'name' => $promotion->name,
+                    ];
+                }
+
+                $discountName = collect($appliedPromotions)->pluck('name')->implode(', ');
+            } else {
+                $bestPromotion = $this->getBestPromotion($applicablePromotions, (float) $price, $quantity);
+
+                if ($bestPromotion !== null) {
+                    $discountAmount = $this->promotionService
+                        ->calculateDiscountAmount($bestPromotion, (float) $price, $quantity);
+                    $discountName = $bestPromotion->name;
+                    $appliedPromotions[] = [
+                        'promotion_id' => $bestPromotion->id,
+                        'discount_type' => $bestPromotion->type,
+                        'discount_value' => (float) $bestPromotion->discount_value,
+                        'discount_amount' => $discountAmount,
+                        'name' => $bestPromotion->name,
+                    ];
+                }
+            }
+        }
 
         $lineTotal = ($price * $quantity) - $discountAmount;
 
-        return [
+        $result = [
             'product_name' => $menu->name,
             'menu_id' => $menu->id,
             'quantity' => $quantity,
@@ -53,6 +115,12 @@ class OrderCalculationService
             'discount_name' => $discountName,
             'line_total' => $lineTotal,
         ];
+
+        if ($includePromotionMeta) {
+            $result['applied_promotions'] = $appliedPromotions;
+        }
+
+        return $result;
     }
 
     /**
@@ -79,6 +147,22 @@ class OrderCalculationService
             'grand_total' => $grandTotal,
             'total_price' => $grandTotal, // keep legacy column in sync
         ];
+    }
+
+    private function getBestPromotion(Collection $promotions, float $unitPrice, int $quantity): ?Promotion
+    {
+        $best = null;
+        $bestDiscount = 0;
+
+        foreach ($promotions as $promotion) {
+            $discount = $this->promotionService->calculateDiscountAmount($promotion, $unitPrice, $quantity);
+            if ($discount > $bestDiscount) {
+                $bestDiscount = $discount;
+                $best = $promotion;
+            }
+        }
+
+        return $best;
     }
 
     /**

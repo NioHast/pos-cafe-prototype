@@ -67,6 +67,22 @@ class Ingredient extends Model
     }
 
     /**
+     * Get stock movement entries for this ingredient.
+     */
+    public function stockMovements(): HasMany
+    {
+        return $this->hasMany(StockMovement::class);
+    }
+
+    /**
+     * Get stock adjustments for this ingredient.
+     */
+    public function stockAdjustments(): HasMany
+    {
+        return $this->hasMany(StockAdjustment::class);
+    }
+
+    /**
      * Calculate total stock from all batches.
      */
     public function getTotalStock(): float

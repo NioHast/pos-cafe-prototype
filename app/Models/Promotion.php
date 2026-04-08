@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Promotion extends Model
@@ -31,6 +32,22 @@ class Promotion extends Model
         'applicable_items' => 'array',
     ];
 
+    /**
+     * Rules that define where this promotion applies.
+     */
+    public function rules(): HasMany
+    {
+        return $this->hasMany(PromotionRule::class);
+    }
+
+    /**
+     * Orders where this promotion was applied.
+     */
+    public function appliedPromotions(): HasMany
+    {
+        return $this->hasMany(AppliedPromotion::class);
+    }
+
     public function isActive(): bool
     {
         $now = now();
@@ -43,5 +60,22 @@ class Promotion extends Model
     {
         return $this->isActive() 
             && ($this->usage_limit === null || $this->usage_count < $this->usage_limit);
+    }
+
+    /**
+     * Check if promotion is applicable to a given menu/category context.
+     */
+    public function isApplicableTo(int $menuId, int $categoryId): bool
+    {
+        $rules = $this->rules;
+
+        if ($rules->isEmpty()) {
+            return true;
+        }
+
+        return $rules->contains(fn (PromotionRule $rule) =>
+            ($rule->applicable_type === 'menu' && (int) $rule->applicable_id === $menuId)
+            || ($rule->applicable_type === 'category' && (int) $rule->applicable_id === $categoryId)
+        );
     }
 }

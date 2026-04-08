@@ -6,6 +6,8 @@ use App\Models\Category;
 use App\Models\Menu;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Promotion;
+use App\Models\PromotionRule;
 use App\Models\Role;
 use App\Models\StudentProfile;
 use App\Models\User;
@@ -380,5 +382,102 @@ class OrderManagementTest extends TestCase
         $this->assertEquals(1, Order::ofCustomerType('student')->count());
         $this->assertEquals(1, Order::ofCustomerType('guest')->count());
         $this->assertEquals(2, Order::notVoided()->count());
+    }
+
+    public function test_single_best_promotion_strategy_applies_highest_discount(): void
+    {
+        $promoPercent = Promotion::create([
+            'name' => '10% Off',
+            'type' => 'percentage',
+            'discount_value' => 10,
+            'start_date' => now()->subDay(),
+            'end_date' => now()->addDay(),
+            'status' => 'active',
+        ]);
+
+        $promoFixed = Promotion::create([
+            'name' => 'Diskon 5.000',
+            'type' => 'fixed_amount',
+            'discount_value' => 5000,
+            'start_date' => now()->subDay(),
+            'end_date' => now()->addDay(),
+            'status' => 'active',
+        ]);
+
+        PromotionRule::create([
+            'promotion_id' => $promoPercent->id,
+            'applicable_type' => 'menu',
+            'applicable_id' => $this->menuRegular->id,
+        ]);
+
+        PromotionRule::create([
+            'promotion_id' => $promoFixed->id,
+            'applicable_type' => 'menu',
+            'applicable_id' => $this->menuRegular->id,
+        ]);
+
+        $result = $this->calcService->calculateItem(
+            $this->menuRegular,
+            1,
+            null,
+            [$promoPercent->id, $promoFixed->id],
+            'single_best',
+            true
+        );
+
+        // For 15,000 price: 10% = 1,500 vs fixed 5,000 => fixed should win
+        $this->assertEquals(5000, $result['discount_amount']);
+        $this->assertEquals('Diskon 5.000', $result['discount_name']);
+        $this->assertEquals(10000, $result['line_total']);
+        $this->assertCount(1, $result['applied_promotions']);
+    }
+
+    public function test_stacking_promotion_strategy_combines_selected_promotions(): void
+    {
+        $promoPercent = Promotion::create([
+            'name' => '10% Off',
+            'type' => 'percentage',
+            'discount_value' => 10,
+            'start_date' => now()->subDay(),
+            'end_date' => now()->addDay(),
+            'status' => 'active',
+        ]);
+
+        $promoFixed = Promotion::create([
+            'name' => 'Diskon 1.000',
+            'type' => 'fixed_amount',
+            'discount_value' => 1000,
+            'start_date' => now()->subDay(),
+            'end_date' => now()->addDay(),
+            'status' => 'active',
+        ]);
+
+        PromotionRule::create([
+            'promotion_id' => $promoPercent->id,
+            'applicable_type' => 'menu',
+            'applicable_id' => $this->menuRegular->id,
+        ]);
+
+        PromotionRule::create([
+            'promotion_id' => $promoFixed->id,
+            'applicable_type' => 'menu',
+            'applicable_id' => $this->menuRegular->id,
+        ]);
+
+        $result = $this->calcService->calculateItem(
+            $this->menuRegular,
+            1,
+            null,
+            [$promoPercent->id, $promoFixed->id],
+            'stacking',
+            true
+        );
+
+        // 15,000 -> 10% (1,500), then fixed 1,000 => total 2,500 discount
+        $this->assertEquals(2500, $result['discount_amount']);
+        $this->assertEquals(12500, $result['line_total']);
+        $this->assertCount(2, $result['applied_promotions']);
+        $this->assertStringContainsString('10% Off', $result['discount_name']);
+        $this->assertStringContainsString('Diskon 1.000', $result['discount_name']);
     }
 }

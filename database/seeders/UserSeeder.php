@@ -18,25 +18,18 @@ class UserSeeder extends Seeder
         $cashierRole = Role::where('name', 'cashier')->first();
 
         if ($adminRole) {
-            User::firstOrCreate(
-                ['email' => 'admin@example.com'],
-                [
-                    'name' => 'Administrator',
-                    'password' => Hash::make('password'),
-                    'role_id' => $adminRole->id,
-                ]
+            $this->upsertSystemUser(
+                email: 'admin@example.com',
+                name: 'Administrator',
+                roleId: $adminRole->id,
             );
         }
 
         if ($cashierRole) {
-            // Create cashier user
-            User::firstOrCreate(
-                ['email' => 'cashier@example.com'],
-                [
-                    'name' => 'Kasir Demo',
-                    'password' => Hash::make('password'),
-                    'role_id' => $cashierRole->id,
-                ]
+            $this->upsertSystemUser(
+                email: 'cashier@example.com',
+                name: 'Kasir Demo',
+                roleId: $cashierRole->id,
             );
         }
 
@@ -50,15 +43,32 @@ class UserSeeder extends Seeder
             ];
 
             foreach ($students as $student) {
-                User::firstOrCreate(
-                    ['email' => $student['email']],
-                    [
-                        'name' => $student['name'],
-                        'password' => Hash::make('password'),
-                        'role_id' => $studentRole->id,
-                    ]
+                $this->upsertSystemUser(
+                    email: $student['email'],
+                    name: $student['name'],
+                    roleId: $studentRole->id,
                 );
             }
+        }
+    }
+
+    /**
+     * Create or restore a seeded user account and keep key attributes in sync.
+     */
+    private function upsertSystemUser(string $email, string $name, int $roleId): void
+    {
+        $user = User::withTrashed()->updateOrCreate(
+            ['email' => $email],
+            [
+                'name' => $name,
+                'password' => Hash::make('password'),
+                'role_id' => $roleId,
+                'is_active' => true,
+            ]
+        );
+
+        if ($user->trashed()) {
+            $user->restore();
         }
     }
 }

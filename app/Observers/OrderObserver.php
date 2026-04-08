@@ -79,6 +79,10 @@ class OrderObserver
             ->map(fn ($item) => [
                 'menu_id' => $item->menu_id,
                 'quantity' => $item->quantity,
+                'order_id' => $order->id,
+                'order_item_id' => $item->id,
+                'recorded_by' => $item->handled_by,
+                'reference' => 'ORD-' . $order->id,
             ])
             ->values()
             ->toArray();

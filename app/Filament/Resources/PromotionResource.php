@@ -3,6 +3,8 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\PromotionResource\Pages;
+use App\Models\Category;
+use App\Models\Menu;
 use App\Models\Promotion;
 use Filament\Forms\Components;
 use Filament\Schemas\Components as SchemaComponents;
@@ -99,15 +101,39 @@ class PromotionResource extends Resource
                             ->rows(3)
                             ->maxLength(65535)
                             ->columnSpanFull(),
-                        Components\Select::make('applicable_items')
-                            ->label('Applicable Menu Items')
-                            ->multiple()
-                            ->relationship('', 'name', fn ($query) => $query->from('menu'))
-                            ->preload()
-                            ->searchable()
-                            ->helperText('Select menu items this promotion applies to. Leave empty for all items')
-                            ->columnSpanFull(),
                     ])->columns(2),
+
+                SchemaComponents\Section::make('Applicability Rules')
+                    ->description('Kosongkan jika promo berlaku untuk semua menu. Tambahkan rule untuk membatasi ke menu/kategori tertentu.')
+                    ->schema([
+                        Components\Repeater::make('rules')
+                            ->relationship('rules')
+                            ->label('')
+                            ->schema([
+                                Components\Select::make('applicable_type')
+                                    ->label('Rule Type')
+                                    ->options([
+                                        'menu' => 'Specific Menu',
+                                        'category' => 'Category',
+                                    ])
+                                    ->required()
+                                    ->native(false)
+                                    ->live(),
+                                Components\Select::make('applicable_id')
+                                    ->label('Target')
+                                    ->options(function (SchemaComponents\Utilities\Get $get) {
+                                        return $get('applicable_type') === 'category'
+                                            ? Category::query()->orderBy('name')->pluck('name', 'id')->toArray()
+                                            : Menu::query()->orderBy('name')->pluck('name', 'id')->toArray();
+                                    })
+                                    ->required()
+                                    ->searchable()
+                                    ->native(false),
+                            ])
+                            ->columns(2)
+                            ->defaultItems(0)
+                            ->addActionLabel('+ Add Rule'),
+                    ]),
             ]);
     }
 

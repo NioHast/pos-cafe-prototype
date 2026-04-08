@@ -93,9 +93,13 @@ class IngredientResource extends Resource
                     ->falseLabel('Inactive only'),
             ])
             ->actions([
+                \Filament\Actions\ViewAction::make()
+                    ->label('Stok Batch')
+                    ->icon('heroicon-o-archive-box'),
                 \Filament\Actions\EditAction::make(),
                 \Filament\Actions\DeleteAction::make(),
             ])
+            ->recordUrl(null)
             ->bulkActions([
                 \Filament\Actions\BulkActionGroup::make([
                     \Filament\Actions\DeleteBulkAction::make(),
@@ -117,6 +121,7 @@ class IngredientResource extends Resource
         return [
             'index' => Pages\ListIngredients::route('/'),
             'create' => Pages\CreateIngredient::route('/create'),
+            'view' => Pages\ViewIngredient::route('/{record}'),
             'edit' => Pages\EditIngredient::route('/{record}/edit'),
         ];
     }
