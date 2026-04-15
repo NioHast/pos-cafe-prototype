@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { router } from '@inertiajs/react';
-import { Search, X, Banknote, QrCode, ShieldCheck, Lock, User, CircleCheck, Clock } from 'lucide-react';
+import { Search, X, Banknote, QrCode, ShieldCheck, Lock, User, CircleCheck, Clock, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import CashierLayout from '@/Layouts/CashierLayout';
 import MenuGridItem from '@/Components/Cashier/MenuGridItem';
 import KeranjangItem from '@/Components/Cashier/KeranjangItem';
@@ -16,6 +16,15 @@ export default function PesananBaru({ categories }) {
     const [processing,     setProcessing]     = useState(false);
     const [showSuccess,    setShowSuccess]    = useState(false);
     const [successTotal,   setSuccessTotal]   = useState(0);
+    const [isCartCollapsed, setIsCartCollapsed] = useState(false);
+    const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        return window.localStorage.getItem('cashier-sidebar-collapsed') === 'true';
+    });
+    const [viewport, setViewport] = useState(() => {
+        if (typeof window === 'undefined') return { width: 1280, height: 720 };
+        return { width: window.innerWidth, height: window.innerHeight };
+    });
 
     /* ── Derived ── */
     const allMenus = useMemo(
@@ -40,6 +49,35 @@ export default function PesananBaru({ categories }) {
     const total         = cartItems.reduce((s, i) => s + i.price * i.quantity, 0);
     const totalCashback = isMahasiswa ? cartItems.reduce((s, i) => s + (i.cashback ?? 0) * i.quantity, 0) : 0;
     const grandTotal    = total - totalCashback;
+    const isPortrait    = viewport.height > viewport.width;
+
+    const cartExpandedWidth = isLeftSidebarCollapsed ? 380 : 340;
+    const cartPanelWidth = isCartCollapsed ? 78 : cartExpandedWidth;
+    const menuGridColumns = isPortrait
+        ? 'repeat(auto-fill, minmax(170px, 1fr))'
+        : isCartCollapsed
+            ? 'repeat(auto-fill, minmax(185px, 1fr))'
+            : 'repeat(auto-fill, minmax(210px, 1fr))';
+
+    useEffect(() => {
+        const onResize = () => setViewport({ width: window.innerWidth, height: window.innerHeight });
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
+    }, []);
+
+    useEffect(() => {
+        if (!isPortrait) return;
+        setIsCartCollapsed(true);
+    }, [isPortrait]);
+
+    useEffect(() => {
+        const onSidebarToggle = (event) => {
+            setIsLeftSidebarCollapsed(Boolean(event.detail?.collapsed));
+        };
+
+        window.addEventListener('cashier-sidebar-toggle', onSidebarToggle);
+        return () => window.removeEventListener('cashier-sidebar-toggle', onSidebarToggle);
+    }, []);
 
     /* ── Cart actions ── */
     function addToCart(menu) {
@@ -108,10 +146,22 @@ export default function PesananBaru({ categories }) {
 
     return (
         <CashierLayout title="Pesanan Baru" fullscreen>
-            <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', flexDirection: isPortrait ? 'column' : 'row', height: '100vh', overflow: 'hidden' }}>
 
                 {/* ══ PANEL TENGAH ══ */}
-                <div style={{ flex: 1, padding: 24, background: '#F8FAFC', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16, height: '100vh' }}>
+                <div
+                    style={{
+                        flex: 1,
+                        padding: isPortrait ? 14 : 24,
+                        background: '#F8FAFC',
+                        overflowY: 'auto',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 16,
+                        height: isPortrait ? 'auto' : '100vh',
+                        minHeight: 0,
+                    }}
+                >
                     {/* Search */}
                     <div style={{ position: 'relative' }}>
                         <Search size={18} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8', pointerEvents: 'none' }} />
@@ -143,26 +193,64 @@ export default function PesananBaru({ categories }) {
                     {filteredMenus.length === 0 ? (
                         <div style={{ textAlign: 'center', color: '#94A3B8', paddingTop: 48, fontSize: 14 }}>Tidak ada menu ditemukan</div>
                     ) : (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: menuGridColumns, gap: isPortrait ? 10 : 16 }}>
                             {filteredMenus.map(menu => <MenuGridItem key={menu.id} menu={menu} onAdd={addToCart} />)}
                         </div>
                     )}
                 </div>
 
                 {/* ══ PANEL KANAN — Keranjang ══ */}
-                <div style={{ width: 380, background: T.surface, borderLeft: `1px solid ${T.border}`, padding: 24, display: 'flex', flexDirection: 'column', flexShrink: 0, height: '100vh', overflowY: 'auto' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                        <span style={{ fontSize: 16, fontWeight: 700, color: T.text, letterSpacing: '-0.2px' }}>Keranjang Pesanan</span>
-                        <span style={{ background: T.accent, color: 'white', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>{totalQty}</span>
+                <div
+                    style={{
+                        width: isPortrait ? '100%' : cartPanelWidth,
+                        background: T.surface,
+                        borderLeft: isPortrait ? 'none' : `1px solid ${T.border}`,
+                        borderTop: isPortrait ? `1px solid ${T.border}` : 'none',
+                        padding: isCartCollapsed ? '14px 12px' : (isPortrait ? '14px 16px 16px' : 24),
+                        display: 'flex',
+                        flexDirection: 'column',
+                        flexShrink: 0,
+                        height: isPortrait ? (isCartCollapsed ? 72 : '44vh') : '100vh',
+                        overflowY: 'auto',
+                        overflowX: 'hidden',
+                        transition: 'width 0.2s ease, height 0.2s ease, padding 0.2s ease',
+                    }}
+                >
+                    <div style={{ display: 'flex', justifyContent: isCartCollapsed ? 'center' : 'space-between', alignItems: 'center', marginBottom: isCartCollapsed ? 0 : 16, gap: 10 }}>
+                        {!isCartCollapsed && <span style={{ fontSize: 16, fontWeight: 700, color: T.text, letterSpacing: '-0.2px' }}>Keranjang Pesanan</span>}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ background: T.accent, color: 'white', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>{totalQty}</span>
+                            <button
+                                type="button"
+                                onClick={() => setIsCartCollapsed(prev => !prev)}
+                                title={isCartCollapsed ? 'Expand keranjang' : 'Collapse keranjang'}
+                                style={{
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: 8,
+                                    border: `1px solid ${T.border}`,
+                                    background: '#F8FAFC',
+                                    color: '#334155',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                {isCartCollapsed ? <PanelRightOpen size={16} /> : <PanelRightClose size={16} />}
+                            </button>
+                        </div>
                     </div>
-                    <div style={{ flex: 1, overflowY: 'auto' }}>
-                        {cartItems.length === 0 ? (
-                            <p style={{ color: '#94A3B8', textAlign: 'center', marginTop: 40, fontSize: 14 }}>Keranjang kosong</p>
-                        ) : (
-                            cartItems.map(item => <KeranjangItem key={item.menuId} item={item} onIncrement={increment} onDecrement={decrement} />)
-                        )}
-                    </div>
-                    <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 16, marginTop: 'auto' }}>
+                    {!isCartCollapsed && (
+                        <>
+                            <div style={{ flex: 1, overflowY: 'auto' }}>
+                                {cartItems.length === 0 ? (
+                                    <p style={{ color: '#94A3B8', textAlign: 'center', marginTop: 40, fontSize: 14 }}>Keranjang kosong</p>
+                                ) : (
+                                    cartItems.map(item => <KeranjangItem key={item.menuId} item={item} onIncrement={increment} onDecrement={decrement} />)
+                                )}
+                            </div>
+                            <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 16, marginTop: 'auto' }}>
                         {/* Toggle Mahasiswa */}
                         <div
                             onClick={() => setIsMahasiswa(p => !p)}
@@ -200,7 +288,9 @@ export default function PesananBaru({ categories }) {
                             <span>BAYAR</span>
                             <span style={{ fontSize: 18 }}>{formatRupiah(grandTotal)}</span>
                         </button>
-                    </div>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -306,7 +396,7 @@ export default function PesananBaru({ categories }) {
                                     {/* Security note */}
                                     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 5, padding: '0 0 4px' }}>
                                         <Lock size={11} color="#94A3B8" />
-                                        <span style={{ fontSize: 11, color: '#94A3B8', fontFamily: 'Outfit, system-ui' }}>Transaksi aman & terverifikasi</span>
+                                        <span style={{ fontSize: 11, color: '#94A3B8', fontFamily: 'Outfit, system-ui' }}></span>
                                     </div>
                                 </div>
 

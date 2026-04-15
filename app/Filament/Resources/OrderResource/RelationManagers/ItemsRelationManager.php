@@ -2,7 +2,8 @@
 
 namespace App\Filament\Resources\OrderResource\RelationManagers;
 
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -13,23 +14,23 @@ class ItemsRelationManager extends RelationManager
 
     protected static ?string $title = 'Item Pesanan';
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form->schema([]);
+        return $schema->components([]);
     }
 
     public function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('menu.name')
+                TextColumn::make('menu.name')
                     ->label('Menu'),
-                Tables\Columns\TextColumn::make('quantity')
+                TextColumn::make('quantity')
                     ->label('Qty'),
-                Tables\Columns\TextColumn::make('unit_price')
+                TextColumn::make('unit_price')
                     ->label('Harga Satuan')
                     ->money('IDR'),
-                Tables\Columns\TextColumn::make('subtotal')
+                TextColumn::make('subtotal')
                     ->label('Subtotal')
                     ->money('IDR'),
             ])

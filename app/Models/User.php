@@ -22,9 +22,7 @@ class User extends Authenticatable implements FilamentUser
         'email',
         'password',
         'role',
-        'nim',
         'phone',
-        'is_student_verified',
     ];
 
     protected $hidden = [
@@ -35,9 +33,8 @@ class User extends Authenticatable implements FilamentUser
     protected function casts(): array
     {
         return [
-            'email_verified_at'   => 'datetime',
-            'password'            => 'hashed',
-            'is_student_verified' => 'boolean',
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
         ];
     }
 
@@ -49,5 +46,30 @@ class User extends Authenticatable implements FilamentUser
     public function cashierOrders()
     {
         return $this->hasMany(Order::class, 'cashier_id');
+    }
+
+    public function cashierSessions()
+    {
+        return $this->hasMany(CashierSession::class);
+    }
+
+    public function wasteRecords()
+    {
+        return $this->hasMany(WasteRecord::class, 'recorded_by');
+    }
+
+    public function recordedStockAdjustments()
+    {
+        return $this->hasMany(StockAdjustment::class, 'recorded_by');
+    }
+
+    public function approvedStockAdjustments()
+    {
+        return $this->hasMany(StockAdjustment::class, 'approved_by');
+    }
+
+    public function stockMovements()
+    {
+        return $this->hasMany(StockMovement::class, 'recorded_by');
     }
 }

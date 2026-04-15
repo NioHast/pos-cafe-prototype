@@ -1,7 +1,6 @@
 const CACHE = 'w9cafe-v1';
 const STATIC_ASSETS = [
   '/customer/menu',
-  '/customer/login',
   '/manifest.json',
 ];
 

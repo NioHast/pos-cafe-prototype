@@ -10,6 +10,8 @@ import {
     LogOut,
     CheckCircle,
     XCircle,
+    PanelLeftClose,
+    PanelLeftOpen,
 } from 'lucide-react';
 
 const navItems = [
@@ -25,6 +27,11 @@ export default function CashierLayout({ children, title = 'Dashboard', fullscree
     const [pendingCount, setPendingCount] = useState(initialCount ?? 0);
     const intervalRef = useRef(null);
     const [toast, setToast] = useState(null);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        return window.localStorage.getItem('cashier-sidebar-collapsed') === 'true';
+    });
+    const sidebarWidth = isSidebarCollapsed ? 84 : 260;
 
     useEffect(() => {
         if (flash?.success) {
@@ -53,17 +60,37 @@ export default function CashierLayout({ children, title = 'Dashboard', fullscree
         return () => clearInterval(intervalRef.current);
     }, []);
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        window.localStorage.setItem('cashier-sidebar-collapsed', String(isSidebarCollapsed));
+
+        window.dispatchEvent(new CustomEvent('cashier-sidebar-toggle', {
+            detail: {
+                collapsed: isSidebarCollapsed,
+                width: sidebarWidth,
+            },
+        }));
+    }, [isSidebarCollapsed]);
+
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', fontFamily: "'Inter', system-ui, sans-serif" }}>
+        <div
+            style={{
+                display: 'flex',
+                minHeight: '100vh',
+                fontFamily: "'Inter', system-ui, sans-serif",
+                '--cashier-sidebar-width': `${sidebarWidth}px`,
+            }}
+        >
 
             {/* ── SIDEBAR ── */}
             <aside style={{
-                width: 260,
+                width: sidebarWidth,
                 minHeight: '100vh',
                 background: '#0F172A',
                 display: 'flex',
                 flexDirection: 'column',
                 flexShrink: 0,
+                transition: 'width 0.2s ease',
             }}>
 
                 {/* Brand / Logo */}
@@ -74,19 +101,68 @@ export default function CashierLayout({ children, title = 'Dashboard', fullscree
                     alignItems: 'center',
                     gap: 12,
                 }}>
-                    <img
-                        src="/images/logo.jpg"
-                        alt="W9 Cafe"
-                        style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: 10,
-                            objectFit: 'cover',
-                            flexShrink: 0,
-                            boxShadow: '0 2px 10px rgba(0,0,0,0.20)',
-                        }}
-                    />
-                    <span style={{ color: 'white', fontWeight: 700, fontSize: 16 }}>W9 Cafe</span>
+                    {isSidebarCollapsed ? (
+                        <button
+                            type="button"
+                            onClick={() => setIsSidebarCollapsed(prev => !prev)}
+                            title="Expand sidebar"
+                            style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: 10,
+                                border: '1px solid rgba(255,255,255,0.14)',
+                                background: 'rgba(255,255,255,0.05)',
+                                color: '#E2E8F0',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                flexShrink: 0,
+                                boxShadow: '0 2px 10px rgba(0,0,0,0.20)',
+                            }}
+                        >
+                            <PanelLeftOpen size={18} />
+                        </button>
+                    ) : (
+                        <img
+                            src="/images/logo.jpg"
+                            alt="W9 Cafe"
+                            style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: 10,
+                                objectFit: 'cover',
+                                flexShrink: 0,
+                                boxShadow: '0 2px 10px rgba(0,0,0,0.20)',
+                            }}
+                        />
+                    )}
+                    {!isSidebarCollapsed && (
+                        <span style={{ color: 'white', fontWeight: 700, fontSize: 16, whiteSpace: 'nowrap' }}>W9 Cafe</span>
+                    )}
+                    {!isSidebarCollapsed && (
+                        <button
+                            type="button"
+                            onClick={() => setIsSidebarCollapsed(prev => !prev)}
+                            title="Collapse sidebar"
+                            style={{
+                                marginLeft: 'auto',
+                                width: 32,
+                                height: 32,
+                                borderRadius: 8,
+                                border: '1px solid rgba(255,255,255,0.14)',
+                                background: 'rgba(255,255,255,0.05)',
+                                color: '#E2E8F0',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                flexShrink: 0,
+                            }}
+                        >
+                            <PanelLeftClose size={16} />
+                        </button>
+                    )}
                 </div>
 
                 {/* Nav */}
@@ -101,9 +177,9 @@ export default function CashierLayout({ children, title = 'Dashboard', fullscree
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: 12,
+                                    gap: isSidebarCollapsed ? 0 : 12,
                                     height: 44,
-                                    padding: '0 16px',
+                                    padding: isSidebarCollapsed ? '0 12px' : '0 16px',
                                     borderRadius: 8,
                                     textDecoration: 'none',
                                     fontSize: 14,
@@ -111,31 +187,56 @@ export default function CashierLayout({ children, title = 'Dashboard', fullscree
                                     color: active ? '#FFFFFF' : '#94A3B8',
                                     background: active ? '#3B6FD4' : 'transparent',
                                     transition: 'background 0.15s, color 0.15s',
+                                    justifyContent: isSidebarCollapsed ? 'center' : 'flex-start',
                                 }}
                                 onMouseEnter={e => { if (!active) e.currentTarget.style.background = '#1E293B'; }}
                                 onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
                             >
-                                <Icon size={20} />
-                                <span style={{ flex: 1 }}>{label}</span>
+                                <span style={{ position: 'relative', display: 'inline-flex' }}>
+                                    <Icon size={20} />
+                                    {isSidebarCollapsed && showBadge && (
+                                        <span style={{
+                                            background: '#EF4444',
+                                            color: '#FFFFFF',
+                                            borderRadius: '50%',
+                                            minWidth: 16,
+                                            height: 16,
+                                            position: 'absolute',
+                                            top: -8,
+                                            right: -10,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: 9,
+                                            fontWeight: 700,
+                                            lineHeight: 1,
+                                            padding: pendingCount > 9 ? '0 4px' : 0,
+                                        }}>
+                                            {pendingCount > 99 ? '99+' : pendingCount}
+                                        </span>
+                                    )}
+                                </span>
+                                {!isSidebarCollapsed && <span style={{ flex: 1 }}>{label}</span>}
                                 {showBadge && (
-                                    <span style={{
-                                        background: '#EF4444',
-                                        color: '#FFFFFF',
-                                        borderRadius: '50%',
-                                        minWidth: 20,
-                                        height: 20,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: 11,
-                                        fontWeight: 700,
-                                        lineHeight: 1,
-                                        padding: pendingCount > 9 ? '0 5px' : 0,
-                                        borderRadius: pendingCount > 9 ? 10 : '50%',
-                                        flexShrink: 0,
-                                    }}>
-                                        {pendingCount > 99 ? '99+' : pendingCount}
-                                    </span>
+                                    !isSidebarCollapsed && (
+                                        <span style={{
+                                            background: '#EF4444',
+                                            color: '#FFFFFF',
+                                            borderRadius: pendingCount > 9 ? 10 : '50%',
+                                            minWidth: 20,
+                                            height: 20,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: 11,
+                                            fontWeight: 700,
+                                            lineHeight: 1,
+                                            padding: pendingCount > 9 ? '0 5px' : 0,
+                                            flexShrink: 0,
+                                        }}>
+                                            {pendingCount > 99 ? '99+' : pendingCount}
+                                        </span>
+                                    )
                                 )}
                             </Link>
                         );
@@ -149,9 +250,9 @@ export default function CashierLayout({ children, title = 'Dashboard', fullscree
                         style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: 12,
+                            gap: isSidebarCollapsed ? 0 : 12,
                             height: 44,
-                            padding: '0 16px',
+                            padding: isSidebarCollapsed ? '0 12px' : '0 16px',
                             borderRadius: 8,
                             width: '100%',
                             background: 'transparent',
@@ -161,12 +262,13 @@ export default function CashierLayout({ children, title = 'Dashboard', fullscree
                             fontWeight: 500,
                             cursor: 'pointer',
                             transition: 'background 0.15s',
+                            justifyContent: isSidebarCollapsed ? 'center' : 'flex-start',
                         }}
                         onMouseEnter={e => e.currentTarget.style.background = 'rgba(220,38,38,0.08)'}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                     >
                         <LogOut size={20} />
-                        Keluar
+                        {!isSidebarCollapsed && 'Keluar'}
                     </button>
                 </div>
             </aside>

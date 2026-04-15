@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Cashier;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Services\InventoryService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -39,7 +42,7 @@ class CashierOrderController extends Controller
         ]);
     }
 
-    public function updateStatus(Request $request, Order $order)
+    public function updateStatus(Request $request, Order $order, InventoryService $inventoryService)
     {
         $request->validate(['status' => 'required|string|in:diproses,selesai']);
 
@@ -58,7 +61,14 @@ class CashierOrderController extends Controller
             return response()->json(['message' => 'Pesanan belum lunas. Konfirmasi pembayaran terlebih dahulu.'], 409);
         }
 
-        $order->update(['status' => $request->status, 'cashier_id' => auth()->id()]);
+        DB::transaction(function () use ($request, $order, $inventoryService) {
+            $order->update(['status' => $request->status, 'cashier_id' => Auth::id()]);
+
+            if ($request->status === Order::STATUS_DIPROSES) {
+                $inventoryService->processSaleForOrder($order, Auth::id());
+            }
+        });
+
         return response()->json(['message' => 'Status diperbarui.']);
     }
 
@@ -72,32 +82,44 @@ class CashierOrderController extends Controller
         $order->update([
             'is_paid'        => true,
             'payment_method' => $request->payment_method,
-            'cashier_id'     => auth()->id(),
+            'cashier_id'     => Auth::id(),
         ]);
         return response()->json(['message' => 'Pembayaran dikonfirmasi.']);
     }
 
-    public function confirmCash(Order $order)
+    public function confirmCash(Order $order, InventoryService $inventoryService)
     {
         if ($order->status !== Order::STATUS_PENDING || $order->payment_method !== 'cash') {
             return response()->json(['message' => 'Status pesanan tidak valid.'], 409);
         }
-        $order->update([
-            'status'     => Order::STATUS_DIPROSES,
-            'cashier_id' => auth()->id(),
-        ]);
+
+        DB::transaction(function () use ($order, $inventoryService) {
+            $order->update([
+                'status'     => Order::STATUS_DIPROSES,
+                'cashier_id' => Auth::id(),
+            ]);
+
+            $inventoryService->processSaleForOrder($order, Auth::id());
+        });
+
         return response()->json(['message' => 'Pembayaran cash dikonfirmasi.']);
     }
 
-    public function confirmQris(Order $order)
+    public function confirmQris(Order $order, InventoryService $inventoryService)
     {
         if ($order->status !== Order::STATUS_PENDING || $order->payment_method !== 'qris') {
             return response()->json(['message' => 'Status pesanan tidak valid.'], 409);
         }
-        $order->update([
-            'status'     => Order::STATUS_DIPROSES,
-            'cashier_id' => auth()->id(),
-        ]);
+
+        DB::transaction(function () use ($order, $inventoryService) {
+            $order->update([
+                'status'     => Order::STATUS_DIPROSES,
+                'cashier_id' => Auth::id(),
+            ]);
+
+            $inventoryService->processSaleForOrder($order, Auth::id());
+        });
+
         return response()->json(['message' => 'Pembayaran QRIS dikonfirmasi.']);
     }
 

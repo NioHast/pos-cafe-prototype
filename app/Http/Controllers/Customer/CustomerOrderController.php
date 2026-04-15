@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Customer;
 
+use Exception;
 use App\Http\Controllers\Controller;
 use App\Models\Menu;
 use App\Models\Order;
 use App\Models\CafeTable;
+use App\Services\OrderPromotionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,13 +15,15 @@ use Inertia\Inertia;
 
 class CustomerOrderController extends Controller
 {
-    public function store(Request $request): JsonResponse
+    public function store(Request $request, OrderPromotionService $orderPromotionService): JsonResponse
     {
         $request->validate([
             'customer_name'     => 'required|string|min:2|max:255',
             'customer_phone'    => ['required', 'string', 'regex:/^[0-9]{10,15}$/'],
             'table_id'          => 'required|integer|exists:cafe_tables,id',
             'is_mahasiswa'      => 'boolean',
+            'promotion_ids'     => 'nullable|array',
+            'promotion_ids.*'   => 'integer|exists:promotions,id',
             'items'             => 'required|array|min:1',
             'items.*.menu_id'   => 'required|integer|exists:menus,id',
             'items.*.quantity'  => 'required|integer|min:1|max:20',
@@ -30,10 +34,11 @@ class CustomerOrderController extends Controller
             'items.min'              => 'Minimal 1 item dalam pesanan.',
         ]);
 
-        return DB::transaction(function () use ($request) {
+        return DB::transaction(function () use ($request, $orderPromotionService) {
             CafeTable::findOrFail($request->table_id);
 
             $isMahasiswa = (bool) $request->input('is_mahasiswa', false);
+            $selectedPromotionIds = $request->input('promotion_ids', []);
 
             $order = Order::create([
                 'customer_name'  => $request->customer_name,
@@ -46,24 +51,39 @@ class CustomerOrderController extends Controller
             ]);
 
             $total = 0;
+            $appliedPromotions = [];
+
             foreach ($request->items as $item) {
                 $menu = Menu::findOrFail($item['menu_id']);
+
                 if (!$menu->is_available) {
-                    throw new \Exception("Menu {$menu->name} tidak tersedia.");
+                    throw new Exception("Menu {$menu->name} tidak tersedia.");
                 }
-                $cashback   = ($isMahasiswa && $menu->cashback > 0) ? $menu->cashback : 0;
-                $unitPrice  = $menu->price - $cashback;
-                $subtotal   = $unitPrice * $item['quantity'];
+
+                $lineCalculation = $orderPromotionService->calculateLine(
+                    $menu,
+                    (int) $item['quantity'],
+                    $isMahasiswa,
+                    $selectedPromotionIds,
+                );
+
                 $order->items()->create([
                     'menu_id'    => $menu->id,
                     'quantity'   => $item['quantity'],
-                    'unit_price' => $unitPrice,
-                    'subtotal'   => $subtotal,
+                    'unit_price' => $lineCalculation['unit_price'],
+                    'subtotal'   => $lineCalculation['subtotal'],
                 ]);
-                $total += $subtotal;
+
+                if ($lineCalculation['applied_promotion'] !== null) {
+                    $appliedPromotions[] = $lineCalculation['applied_promotion'];
+                }
+
+                $total += $lineCalculation['subtotal'];
             }
 
             $order->update(['total_amount' => $total]);
+
+            $orderPromotionService->persistOrderPromotions($order, $appliedPromotions);
 
             return response()->json([
                 'order_code'   => $order->order_code,

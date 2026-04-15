@@ -2,12 +2,20 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\Filter;
+use Filament\Actions\ViewAction;
+use App\Filament\Resources\OrderResource\RelationManagers\ItemsRelationManager;
+use App\Filament\Resources\OrderResource\Pages\ListOrders;
+use App\Filament\Resources\OrderResource\Pages\ViewOrder;
 use App\Filament\Resources\OrderResource\Pages;
 use App\Filament\Resources\OrderResource\RelationManagers;
 use App\Models\Order;
-use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -17,17 +25,17 @@ class OrderResource extends Resource
 {
     protected static ?string $model = Order::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-shopping-cart';
 
-    protected static ?string $navigationGroup = 'Transaksi';
+    protected static string | \UnitEnum | null $navigationGroup = 'Transaksi';
 
     protected static ?string $navigationLabel = 'Pesanan';
 
     protected static ?int $navigationSort = 1;
 
-    public static function infolist(Infolist $infolist): Infolist
+    public static function infolist(Schema $schema): Schema
     {
-        return $infolist->schema([
+        return $schema->components([
             Section::make('Informasi Pesanan')
                 ->schema([
                     TextEntry::make('order_code')->label('Kode Pesanan')->copyable(),
@@ -90,24 +98,24 @@ class OrderResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('order_code')
+                TextColumn::make('order_code')
                     ->label('Kode Pesanan')
                     ->searchable()
                     ->sortable()
                     ->copyable(),
-                Tables\Columns\TextColumn::make('customer_name')
+                TextColumn::make('customer_name')
                     ->label('Pelanggan')
                     ->searchable()
                     ->default('Guest'),
-                Tables\Columns\TextColumn::make('cashier.name')
+                TextColumn::make('cashier.name')
                     ->label('Kasir')
                     ->searchable()
                     ->default('-'),
-                Tables\Columns\TextColumn::make('total_amount')
+                TextColumn::make('total_amount')
                     ->label('Total')
                     ->money('IDR')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('payment_method')
+                TextColumn::make('payment_method')
                     ->label('Metode')
                     ->badge()
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
@@ -116,7 +124,7 @@ class OrderResource extends Resource
                         'bayar_nanti' => 'Bayar Nanti',
                         default => '-',
                     }),
-                Tables\Columns\TextColumn::make('status')
+                TextColumn::make('status')
                     ->label('Status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
@@ -131,34 +139,34 @@ class OrderResource extends Resource
                         'selesai' => 'Selesai',
                         default => $state,
                     }),
-                Tables\Columns\IconColumn::make('is_paid')
+                IconColumn::make('is_paid')
                     ->label('Lunas')
                     ->boolean(),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('Tanggal')
                     ->dateTime('d M Y, H:i')
                     ->sortable(),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('status')
+                SelectFilter::make('status')
                     ->label('Status')
                     ->options([
                         'pending'  => 'Pending',
                         'diproses' => 'Diproses',
                         'selesai'  => 'Selesai',
                     ]),
-                Tables\Filters\SelectFilter::make('payment_method')
+                SelectFilter::make('payment_method')
                     ->label('Metode Bayar')
                     ->options([
                         'cash'        => 'Tunai',
                         'qris'        => 'QRIS',
                         'bayar_nanti' => 'Bayar Nanti',
                     ]),
-                Tables\Filters\Filter::make('today')
+                Filter::make('today')
                     ->label('Hari Ini')
                     ->query(fn (Builder $query): Builder => $query->whereDate('created_at', today()))
                     ->toggle(),
-                Tables\Filters\Filter::make('this_week')
+                Filter::make('this_week')
                     ->label('Minggu Ini')
                     ->query(fn (Builder $query): Builder => $query->whereBetween('created_at', [
                         now()->startOfWeek(),
@@ -166,25 +174,25 @@ class OrderResource extends Resource
                     ]))
                     ->toggle(),
             ])
-            ->actions([
-                Tables\Actions\ViewAction::make(),
+            ->recordActions([
+                ViewAction::make(),
             ])
-            ->bulkActions([])
+            ->toolbarActions([])
             ->defaultSort('created_at', 'desc');
     }
 
     public static function getRelations(): array
     {
         return [
-            RelationManagers\ItemsRelationManager::class,
+            ItemsRelationManager::class,
         ];
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListOrders::route('/'),
-            'view'  => Pages\ViewOrder::route('/{record}'),
+            'index' => ListOrders::route('/'),
+            'view'  => ViewOrder::route('/{record}'),
         ];
     }
 

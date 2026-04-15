@@ -265,7 +265,7 @@ export default function Identitas({ table }) {
                                     Saya adalah mahasiswa STIE Totalwin Semarang
                                 </div>
                                 <div style={{ fontSize: 11, color: '#B5906E', marginTop: 2 }}>
-                                    Opsional — dapatkan harga spesial mahasiswa!
+                                    Opsional
                                 </div>
                             </div>
                         </div>

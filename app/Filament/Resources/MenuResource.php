@@ -2,13 +2,26 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\Resources\MenuResource\RelationManagers\IngredientsRelationManager;
+use App\Filament\Resources\MenuResource\Pages\ListMenus;
+use App\Filament\Resources\MenuResource\Pages\CreateMenu;
+use App\Filament\Resources\MenuResource\Pages\EditMenu;
 use App\Filament\Resources\MenuResource\Pages;
+use App\Filament\Resources\MenuResource\RelationManagers;
 use App\Models\Menu;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -17,17 +30,17 @@ class MenuResource extends Resource
 {
     protected static ?string $model = Menu::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-document-text';
 
-    protected static ?string $navigationGroup = 'Data Master';
+    protected static string | \UnitEnum | null $navigationGroup = 'Data Master';
 
     protected static ?string $navigationLabel = 'Menu';
 
     protected static ?int $navigationSort = 1;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form->schema([
+        return $schema->components([
             TextInput::make('name')
                 ->label('Nama Menu')
                 ->required()
@@ -67,6 +80,11 @@ class MenuResource extends Resource
                 ->label('Ada Diskon Mahasiswa')
                 ->default(true)
                 ->inline(false),
+            Toggle::make('is_stock_calculated')
+                ->label('Stok Otomatis dari Resep')
+                ->dehydrated(false)
+                ->disabled()
+                ->helperText('Nilai ini otomatis aktif jika menu memiliki resep bahan.'),
         ]);
     }
 
@@ -74,57 +92,74 @@ class MenuResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->label('Nama Menu')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('category.name')
+                TextColumn::make('category.name')
                     ->label('Kategori')
                     ->sortable()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('price')
+                TextColumn::make('price')
                     ->label('Harga')
                     ->money('IDR')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('cashback')
+                TextColumn::make('cashback')
                     ->label('Cashback')
                     ->money('IDR')
                     ->sortable(),
-                Tables\Columns\IconColumn::make('is_available')
+                IconColumn::make('is_available')
                     ->label('Tersedia')
                     ->boolean()
                     ->sortable(),
-                Tables\Columns\IconColumn::make('is_student_discount')
+                IconColumn::make('is_student_discount')
                     ->label('Diskon Mhs')
                     ->boolean(),
+                TextColumn::make('is_stock_calculated')
+                    ->label('Resep')
+                    ->badge()
+                    ->formatStateUsing(fn (bool $state): string => $state ? 'Ada Resep' : 'Tanpa Resep')
+                    ->color(fn (bool $state): string => $state ? 'success' : 'warning'),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('category')
+                SelectFilter::make('category')
                     ->relationship('category', 'name')
                     ->label('Kategori'),
-                Tables\Filters\TernaryFilter::make('is_available')
+                TernaryFilter::make('is_available')
                     ->label('Tersedia')
                     ->placeholder('Semua')
                     ->trueLabel('Tersedia')
                     ->falseLabel('Tidak Tersedia'),
+                TernaryFilter::make('is_stock_calculated')
+                    ->label('Resep')
+                    ->placeholder('Semua')
+                    ->trueLabel('Ada Resep')
+                    ->falseLabel('Tanpa Resep'),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+            ->recordActions([
+                EditAction::make(),
+                DeleteAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            IngredientsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListMenus::route('/'),
-            'create' => Pages\CreateMenu::route('/create'),
-            'edit'   => Pages\EditMenu::route('/{record}/edit'),
+            'index'  => ListMenus::route('/'),
+            'create' => CreateMenu::route('/create'),
+            'edit'   => EditMenu::route('/{record}/edit'),
         ];
     }
 }

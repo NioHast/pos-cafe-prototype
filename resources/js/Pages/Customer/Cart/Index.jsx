@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { router } from '@inertiajs/react';
 import axios from 'axios';
-import { CreditCard, ShoppingBag, GraduationCap } from 'lucide-react';
+import { ShoppingBag } from 'lucide-react';
 import CustomerLayout from '@/Layouts/CustomerLayout';
 import useCart from '@/Hooks/useCart';
 import { formatRupiah } from '@/helpers';
 
 export default function CustomerCart() {
-    const { items, tableId, updateQty, total, count, clearCart } = useCart();
+    const { items, tableId, updateQty, total, count } = useCart();
     const [loading,      setLoading]      = useState(false);
     const [errorMsg,     setErrorMsg]     = useState('');
     const [isMahasiswa,  setIsMahasiswa]  = useState(false);
@@ -107,7 +107,6 @@ export default function CustomerCart() {
                                 display: 'flex', alignItems: 'center', gap: 4,
                                 background: '#ECFDF5', borderRadius: 14, padding: '4px 10px',
                             }}>
-                                <GraduationCap size={12} color="#16A34A" />
                                 <span style={{ fontSize: 12, fontWeight: 600, color: '#16A34A', fontFamily: 'Outfit, system-ui' }}>
                                     Cashback {formatRupiah(totalCashback)}
                                 </span>
@@ -245,7 +244,6 @@ export default function CustomerCart() {
                         {isMahasiswa && totalCashback > 0 && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                                    <GraduationCap size={14} color="#16A34A" />
                                     <span style={{ fontSize: 14, color: '#16A34A', fontFamily: 'Outfit, system-ui' }}>Cashback Mahasiswa</span>
                                 </div>
                                 <span style={{ fontSize: 14, fontWeight: 600, color: '#16A34A', fontFamily: 'Outfit, system-ui' }}>

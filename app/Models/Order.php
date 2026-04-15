@@ -59,6 +59,11 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    public function appliedPromotions()
+    {
+        return $this->hasMany(AppliedPromotion::class);
+    }
+
     public function isCashPending(): bool
     {
         return $this->status === self::STATUS_PENDING && $this->payment_method === 'cash';

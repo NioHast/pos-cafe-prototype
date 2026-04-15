@@ -19,6 +19,8 @@ class StoreOrderRequest extends FormRequest
             'items.*.quantity'       => 'required|integer|min:1',
             'payment_method'         => 'required|in:cash,qris,bayar_nanti',
             'customer_name'          => 'nullable|string|max:100',
+            'promotion_ids'          => 'nullable|array',
+            'promotion_ids.*'        => 'integer|exists:promotions,id',
         ];
     }
 

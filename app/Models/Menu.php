@@ -15,6 +15,7 @@ class Menu extends Model
         'cashback',
         'image',
         'is_available',
+        'is_stock_calculated',
         'is_student_discount',
         'student_price',
     ];
@@ -26,6 +27,7 @@ class Menu extends Model
             'cashback'            => 'integer',
             'student_price'       => 'decimal:2',
             'is_available'        => 'boolean',
+            'is_stock_calculated' => 'boolean',
             'is_student_discount' => 'boolean',
         ];
     }
@@ -38,6 +40,56 @@ class Menu extends Model
     public function orderItems()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function ingredients()
+    {
+        return $this->belongsToMany(Ingredient::class, 'menu_ingredients')
+            ->withPivot('quantity_used');
+    }
+
+    public function menuIngredients()
+    {
+        return $this->hasMany(MenuIngredient::class);
+    }
+
+    public function calculateCost(): float
+    {
+        $this->loadMissing('menuIngredients.ingredient');
+
+        $totalCost = 0.0;
+
+        foreach ($this->menuIngredients as $menuIngredient) {
+            $ingredient = $menuIngredient->ingredient;
+
+            if (! $ingredient) {
+                continue;
+            }
+
+            $averageCost = (float) ($ingredient->batches()
+                ->where('quantity', '>', 0)
+                ->avg('cost_per_unit') ?? 0);
+
+            $totalCost += $averageCost * (float) $menuIngredient->quantity_used;
+        }
+
+        return round($totalCost, 2);
+    }
+
+    public function hasRecipe(): bool
+    {
+        return $this->menuIngredients()->exists();
+    }
+
+    public function refreshStockCalculatedFlag(): void
+    {
+        $hasRecipe = $this->menuIngredients()->exists();
+
+        if ($this->is_stock_calculated !== $hasRecipe) {
+            $this->forceFill([
+                'is_stock_calculated' => $hasRecipe,
+            ])->saveQuietly();
+        }
     }
 
     public function getEffectivePriceAttribute(): string

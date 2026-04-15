@@ -4,7 +4,6 @@ namespace App\Filament\Widgets;
 
 use App\Models\Order;
 use App\Models\Menu;
-use App\Models\User;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -40,11 +39,6 @@ class StatsOverview extends StatsOverviewWidget
             ? round((($ordersThisMonth - $ordersLastMonth) / $ordersLastMonth) * 100, 1)
             : 0;
 
-        $pendingVerification = User::where('role', 'customer')
-            ->whereNotNull('nim')
-            ->where('is_student_verified', false)
-            ->count();
-
         return [
             Stat::make('Penjualan Hari Ini', 'Rp ' . number_format($salesToday, 0, ',', '.'))
                 ->description(($salesChange >= 0 ? '↑ ' : '↓ ') . abs($salesChange) . '% dari kemarin')
@@ -61,11 +55,6 @@ class StatsOverview extends StatsOverviewWidget
                 ->description(($ordersChange >= 0 ? '↑ ' : '↓ ') . abs($ordersChange) . '% dari bulan lalu')
                 ->descriptionIcon('heroicon-m-shopping-cart')
                 ->color('primary'),
-
-            Stat::make('Verifikasi Mahasiswa', $pendingVerification . ' Menunggu')
-                ->description('Perlu persetujuan kasir')
-                ->descriptionIcon('heroicon-m-academic-cap')
-                ->color($pendingVerification > 0 ? 'warning' : 'success'),
         ];
     }
 }

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import axios from 'axios';
 import useCart from '@/Hooks/useCart';
-import { ChevronLeft, Banknote, QrCode, ShieldCheck, Lock, MapPin, Wallet } from 'lucide-react';
+import { ChevronLeft, Banknote, QrCode, MapPin, Wallet } from 'lucide-react';
 import CustomerLayout from '@/Layouts/CustomerLayout';
 import { formatRupiah } from '@/helpers';
 
@@ -225,14 +225,6 @@ export default function PaymentChoose({ order, items, table_number }) {
                 {/* Spacer */}
                 <div style={{ flex: 1 }} />
 
-                {/* Security note */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-                    <Lock size={11} color="#B5A898" />
-                    <span style={{ fontSize: 11, color: '#B5A898', fontFamily: 'Outfit, system-ui' }}>
-                        Transaksi aman &amp; terverifikasi
-                    </span>
-                </div>
-
                 {error && (
                     <div style={{
                         background: '#FEF2F2', border: '1px solid #FECACA',
@@ -260,7 +252,6 @@ export default function PaymentChoose({ order, items, table_number }) {
                         transition: 'all 0.15s',
                     }}
                 >
-                    <ShieldCheck size={20} />
                     {loading ? 'Memproses...' : 'Konfirmasi Pembayaran'}
                 </button>
             </div>
