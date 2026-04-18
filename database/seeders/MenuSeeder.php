@@ -5,80 +5,103 @@ namespace Database\Seeders;
 use App\Models\Category;
 use App\Models\Menu;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class MenuSeeder extends Seeder
 {
     public function run(): void
     {
-        Menu::truncate();
+        $categories = Category::query()
+            ->pluck('id', 'slug');
 
-        $coffee   = Category::where('slug', 'coffee-base')->value('id');
-        $tea      = Category::where('slug', 'tea-base')->value('id');
-        $lime     = Category::where('slug', 'lime-base')->value('id');
-        $choco    = Category::where('slug', 'chocolatos-base')->value('id');
-        $snack    = Category::where('slug', 'snack')->value('id');
-        $indomie  = Category::where('slug', 'indomie-base')->value('id');
-        $nasgor   = Category::where('slug', 'nasi-goreng')->value('id');
-        $nastel   = Category::where('slug', 'nasi-telur')->value('id');
-        $geprek   = Category::where('slug', 'ayam-geprek')->value('id');
+        $menuCatalog = [
+            ['category' => 'kopi-robusta', 'name' => 'Espresso', 'price' => 8000, 'student_price' => 7000],
+            ['category' => 'kopi-robusta', 'name' => 'Americano', 'price' => 8000, 'student_price' => 7000],
+            ['category' => 'kopi-robusta', 'name' => 'Es Americano', 'price' => 11000, 'student_price' => 10000],
+            ['category' => 'kopi-robusta', 'name' => 'Kopi Susu Panas', 'price' => 11000, 'student_price' => 10000],
+            ['category' => 'kopi-robusta', 'name' => 'Es Kopi Susu', 'price' => 12000, 'student_price' => 11000],
 
-        // [category_id, name, slug, price, cashback]
-        $menus = [
-            // ── COFFEE BASE ────────────────────────────────────
-            [$coffee, 'Espresso',             'espresso',             10000, 2000],
-            [$coffee, 'Americano Panas',      'americano-panas',      10000, 2000],
-            [$coffee, 'Es Americano',         'es-americano',         12000, 2000],
-            [$coffee, 'Kopi Susu',            'kopi-susu',            14000, 2000],
+            ['category' => 'teh', 'name' => 'Teh Tawar Panas', 'price' => 2000, 'student_price' => 1000],
+            ['category' => 'teh', 'name' => 'Teh Manis Panas', 'price' => 3000, 'student_price' => 2000],
+            ['category' => 'teh', 'name' => 'Es Teh Tawar', 'price' => 3000, 'student_price' => 2000],
+            ['category' => 'teh', 'name' => 'Es Teh Manis', 'price' => 4000, 'student_price' => 3000],
+            ['category' => 'teh', 'name' => 'Teh Susu Manis Panas', 'price' => 6000, 'student_price' => 5000],
+            ['category' => 'teh', 'name' => 'Es Teh Susu Manis', 'price' => 7000, 'student_price' => 6000],
 
-            // ── TEA BASE ───────────────────────────────────────
-            [$tea,    'Teh Tawar',            'teh-tawar',             3000, 1000],
-            [$tea,    'Teh Manis',            'teh-manis',             4000, 1000],
-            [$tea,    'Teh Susu',             'teh-susu',              7000, 2000],
+            ['category' => 'jeruk', 'name' => 'Jeruk Nipis Panas', 'price' => 4000, 'student_price' => 3000],
+            ['category' => 'jeruk', 'name' => 'Es Jeruk Nipis', 'price' => 5000, 'student_price' => 4000],
+            ['category' => 'jeruk', 'name' => 'Lime Tea Panas', 'price' => 5000, 'student_price' => 4000],
+            ['category' => 'jeruk', 'name' => 'Es Lime Tea', 'price' => 6000, 'student_price' => 5000],
 
-            // ── LIME BASE ──────────────────────────────────────
-            [$lime,   'Jeruk Nipis',          'jeruk-nipis',           5000, 1000],
-            [$lime,   'Teh Jeruk (Lime Tea)', 'teh-jeruk-lime-tea',    6000, 1000],
+            ['category' => 'coklat-matcha', 'name' => 'Coklat Panas', 'price' => 7000, 'student_price' => 6000],
+            ['category' => 'coklat-matcha', 'name' => 'Es Coklat', 'price' => 8000, 'student_price' => 7000],
+            ['category' => 'coklat-matcha', 'name' => 'Matcha Panas', 'price' => 7000, 'student_price' => 6000],
+            ['category' => 'coklat-matcha', 'name' => 'Es Matcha', 'price' => 8000, 'student_price' => 7000],
 
-            // ── CHOCOLATOS BASE ───────────────────────────────
-            [$choco,  'Full Chocolate',       'full-chocolate',        8000, 2000],
-            [$choco,  'Matcha',               'matcha',                8000, 2000],
-            [$choco,  'Vanilla Latte',        'vanilla-latte',         8000, 2000],
-            [$choco,  'Creamy Chocolatey',    'creamy-chocolatey',     8000, 2000],
+            ['category' => 'minuman-botol', 'name' => 'Sereh Jahe Botol', 'price' => 7000, 'student_price' => 6000],
+            ['category' => 'minuman-botol', 'name' => 'Kopi Susu Botol', 'price' => 10000, 'student_price' => 8000],
+            ['category' => 'minuman-botol', 'name' => 'Fruit Tea', 'price' => 5000, 'student_price' => 5000],
+            ['category' => 'minuman-botol', 'name' => 'Air Mineral', 'price' => 5000, 'student_price' => 5000],
 
-            // ── SNACK ─────────────────────────────────────────
-            [$snack,  'Pisang Coklat Keju',   'pisang-coklat-keju',   10000, 2000],
-            [$snack,  'Tempe Mendoan',        'tempe-mendoan',         8000, 2000],
-            [$snack,  'Kentang (French Fries)','kentang-french-fries', 12000, 2000],
+            ['category' => 'cemilan', 'name' => 'Pisang Coklat Keju', 'price' => 7000, 'student_price' => 6000],
+            ['category' => 'cemilan', 'name' => 'Tempe Mendoan', 'price' => 8000, 'student_price' => 7000],
+            ['category' => 'cemilan', 'name' => 'Kentang (French Fries)', 'price' => 11000, 'student_price' => 10000],
 
-            // ── INDOMIE BASE ──────────────────────────────────
-            [$indomie,'Mie Goreng Telur',     'mie-goreng-telur',     10000, 1000],
-            [$indomie,'Mie Rebus Telur',      'mie-rebus-telur',      10000, 1000],
+            ['category' => 'mie-spaghetti', 'name' => 'Mie Goreng Telur', 'price' => 10000, 'student_price' => 9000],
+            ['category' => 'mie-spaghetti', 'name' => 'Mie Rebus Telur', 'price' => 10000, 'student_price' => 9000],
 
-            // ── NASI GORENG ───────────────────────────────────
-            [$nasgor, 'Nasgor Telur',         'nasgor-telur',         12000, 2000],
-            [$nasgor, 'Nasgor Ayam/Udang',    'nasgor-ayam-udang',    17000, 2000],
+            ['category' => 'nasi-goreng', 'name' => 'Nasgor Telur', 'price' => 12000, 'student_price' => 10000],
+            ['category' => 'nasi-goreng', 'name' => 'Nasgor Ayam + Telur', 'price' => 16000, 'student_price' => 14000],
+            ['category' => 'nasi-goreng', 'name' => 'Nasgor Udang + Telur', 'price' => 17000, 'student_price' => 15000],
 
-            // ── NASI TELUR ────────────────────────────────────
-            [$nastel, 'Nasi Telur Saus',      'nasi-telur-saus',       9000, 1000],
-            [$nastel, 'Nasi Telur Kecap',     'nasi-telur-kecap',      8000, 1000],
-
-            // ── AYAM GEPREK ───────────────────────────────────
-            [$geprek, 'Nasi Ayam Geprek',     'nasi-ayam-geprek',     14000, 2000],
+            ['category' => 'nasi-telur', 'name' => 'Nasi Telur + Teh/Es Teh', 'price' => 10000, 'student_price' => 10000],
         ];
 
-        foreach ($menus as [$catId, $name, $slug, $price, $cashback]) {
-            Menu::create([
-                'category_id'         => $catId,
-                'name'                => $name,
-                'slug'                => $slug,
-                'description'         => null,
-                'price'               => $price,
-                'cashback'            => $cashback,
-                'image'               => null,
-                'is_available'        => true,
-                'is_student_discount' => true,
-                'student_price'       => $price - $cashback,
-            ]);
+        $now = now();
+        $payload = [];
+
+        foreach ($menuCatalog as $item) {
+            $categoryId = $categories[$item['category']] ?? null;
+
+            if (! $categoryId) {
+                continue;
+            }
+
+            $price = (float) $item['price'];
+            $studentPrice = (float) $item['student_price'];
+            $cashback = max(0, (int) ($price - $studentPrice));
+
+            $payload[] = [
+                'category_id' => $categoryId,
+                'name' => $item['name'],
+                'slug' => Str::slug($item['name']),
+                'description' => null,
+                'price' => $price,
+                'cashback' => $cashback,
+                'image' => null,
+                'is_available' => true,
+                'is_student_discount' => $studentPrice < $price,
+                'student_price' => $studentPrice,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
         }
+
+        Menu::query()->upsert(
+            $payload,
+            ['slug'],
+            [
+                'category_id',
+                'name',
+                'description',
+                'price',
+                'cashback',
+                'image',
+                'is_available',
+                'is_student_discount',
+                'student_price',
+                'updated_at',
+            ]
+        );
     }
 }

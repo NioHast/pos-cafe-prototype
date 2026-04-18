@@ -4,27 +4,42 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class CategorySeeder extends Seeder
 {
     public function run(): void
     {
-        Category::truncate();
+        $now = now();
 
         $categories = [
-            ['name' => 'Coffee Base',     'slug' => 'coffee-base'],
-            ['name' => 'Tea Base',        'slug' => 'tea-base'],
-            ['name' => 'Lime Base',       'slug' => 'lime-base'],
-            ['name' => 'Chocolatos Base', 'slug' => 'chocolatos-base'],
-            ['name' => 'Snack',           'slug' => 'snack'],
-            ['name' => 'Indomie Base',    'slug' => 'indomie-base'],
-            ['name' => 'Nasi Goreng',     'slug' => 'nasi-goreng'],
-            ['name' => 'Nasi Telur',      'slug' => 'nasi-telur'],
-            ['name' => 'Ayam Geprek',     'slug' => 'ayam-geprek'],
+            'Kopi Robusta',
+            'Teh',
+            'Jeruk',
+            'Coklat & Matcha',
+            'Minuman Botol',
+            'Cemilan',
+            'Mie & Spaghetti',
+            'Nasi Goreng',
+            'Nasi Telur',
         ];
 
-        foreach ($categories as $cat) {
-            Category::create(array_merge($cat, ['is_active' => true]));
-        }
+        $payload = collect($categories)
+            ->map(function (string $name) use ($now): array {
+                return [
+                    'name' => $name,
+                    'slug' => Str::slug($name),
+                    'is_active' => true,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            })
+            ->all();
+
+        Category::query()->upsert(
+            $payload,
+            ['slug'],
+            ['name', 'is_active', 'updated_at']
+        );
     }
 }
