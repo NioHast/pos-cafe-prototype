@@ -2,28 +2,27 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Schemas\Schema;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TernaryFilter;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use App\Filament\Resources\MenuResource\RelationManagers\IngredientsRelationManager;
-use App\Filament\Resources\MenuResource\Pages\ListMenus;
 use App\Filament\Resources\MenuResource\Pages\CreateMenu;
 use App\Filament\Resources\MenuResource\Pages\EditMenu;
-use App\Filament\Resources\MenuResource\Pages;
-use App\Filament\Resources\MenuResource\RelationManagers;
+use App\Filament\Resources\MenuResource\Pages\ListMenus;
+use App\Filament\Resources\MenuResource\RelationManagers\IngredientsRelationManager;
 use App\Models\Menu;
+use App\Support\DemoAdminData;
+use App\Support\DemoAdminMode;
+use Filament\Schemas\Schema;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 
 class MenuResource extends Resource
@@ -90,6 +89,41 @@ class MenuResource extends Resource
 
     public static function table(Table $table): Table
     {
+        if (DemoAdminMode::enabled()) {
+            return $table
+                ->columns([
+                    TextColumn::make('name')
+                        ->label('Nama Menu')
+                        ->sortable(),
+                    TextColumn::make('category.name')
+                        ->label('Kategori'),
+                    TextColumn::make('price')
+                        ->label('Harga')
+                        ->money('IDR')
+                        ->sortable(),
+                    TextColumn::make('cashback')
+                        ->label('Cashback')
+                        ->money('IDR')
+                        ->sortable(),
+                    IconColumn::make('is_available')
+                        ->label('Tersedia')
+                        ->boolean(),
+                    IconColumn::make('is_student_discount')
+                        ->label('Diskon Mhs')
+                        ->boolean(),
+                    TextColumn::make('is_stock_calculated')
+                        ->label('Resep')
+                        ->badge()
+                        ->formatStateUsing(fn (bool $state): string => $state ? 'Ada Resep' : 'Tanpa Resep')
+                        ->color(fn (bool $state): string => $state ? 'success' : 'warning'),
+                ])
+                ->records(fn (?string $search = null, ?string $sortColumn = null, ?string $sortDirection = null, int | string $page = 1, int | string $recordsPerPage = 10) => DemoAdminData::forTable('menus', $search, $sortColumn, $sortDirection, $page, $recordsPerPage))
+                ->filters([])
+                ->recordActions([])
+                ->toolbarActions([])
+                ->defaultSort('name');
+        }
+
         return $table
             ->columns([
                 TextColumn::make('name')
@@ -149,6 +183,10 @@ class MenuResource extends Resource
 
     public static function getRelations(): array
     {
+        if (DemoAdminMode::enabled()) {
+            return [];
+        }
+
         return [
             IngredientsRelationManager::class,
         ];
@@ -156,6 +194,12 @@ class MenuResource extends Resource
 
     public static function getPages(): array
     {
+        if (DemoAdminMode::enabled()) {
+            return [
+                'index' => ListMenus::route('/'),
+            ];
+        }
+
         return [
             'index'  => ListMenus::route('/'),
             'create' => CreateMenu::route('/create'),

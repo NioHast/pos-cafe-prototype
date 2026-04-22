@@ -19,6 +19,8 @@ use App\Filament\Resources\StockAdjustmentResource\Pages;
 use App\Filament\Resources\StockAdjustmentResource\RelationManagers;
 use App\Models\IngredientBatch;
 use App\Models\StockAdjustment;
+use App\Support\DemoAdminData;
+use App\Support\DemoAdminMode;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -119,6 +121,49 @@ class StockAdjustmentResource extends Resource
 
     public static function table(Table $table): Table
     {
+        if (DemoAdminMode::enabled()) {
+            return $table
+                ->columns([
+                    TextColumn::make('id')
+                        ->label('ID')
+                        ->sortable(),
+                    TextColumn::make('ingredient.name')
+                        ->label('Ingredient')
+                        ->searchable()
+                        ->sortable(),
+                    TextColumn::make('adjustment_type')
+                        ->label('Type')
+                        ->badge()
+                        ->color(fn (string $state): string => $state === StockAdjustment::TYPE_INCREASE ? 'success' : 'warning')
+                        ->formatStateUsing(fn (string $state): string => $state === StockAdjustment::TYPE_INCREASE ? 'Increase' : 'Decrease'),
+                    TextColumn::make('quantity')
+                        ->label('Qty')
+                        ->numeric(decimalPlaces: 2)
+                        ->sortable(),
+                    TextColumn::make('quantity_before')
+                        ->label('Before')
+                        ->numeric(decimalPlaces: 2)
+                        ->sortable(),
+                    TextColumn::make('quantity_after')
+                        ->label('After')
+                        ->numeric(decimalPlaces: 2)
+                        ->sortable(),
+                    TextColumn::make('recordedBy.name')
+                        ->label('Recorded By')
+                        ->default('-')
+                        ->sortable(),
+                    TextColumn::make('adjusted_at')
+                        ->label('Adjusted At')
+                        ->dateTime()
+                        ->sortable(),
+                ])
+                ->records(fn (?string $search = null, ?string $sortColumn = null, ?string $sortDirection = null, int | string $page = 1, int | string $recordsPerPage = 10) => DemoAdminData::forTable('stock_adjustments', $search, $sortColumn, $sortDirection, $page, $recordsPerPage))
+                ->filters([])
+                ->recordActions([])
+                ->toolbarActions([])
+                ->defaultSort('adjusted_at', 'desc');
+        }
+
         return $table
             ->modifyQueryUsing(fn ($query) => $query->with(['ingredient', 'recordedBy', 'approvedBy']))
             ->columns([
@@ -176,6 +221,10 @@ class StockAdjustmentResource extends Resource
 
     public static function getRelations(): array
     {
+        if (DemoAdminMode::enabled()) {
+            return [];
+        }
+
         return [
             MovementsRelationManager::class,
         ];
@@ -183,6 +232,12 @@ class StockAdjustmentResource extends Resource
 
     public static function getPages(): array
     {
+        if (DemoAdminMode::enabled()) {
+            return [
+                'index' => ListStockAdjustments::route('/'),
+            ];
+        }
+
         return [
             'index' => ListStockAdjustments::route('/'),
             'create' => CreateStockAdjustment::route('/create'),

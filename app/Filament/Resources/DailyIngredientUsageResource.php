@@ -10,6 +10,8 @@ use Filament\Tables\Filters\SelectFilter;
 use App\Filament\Resources\DailyIngredientUsageResource\Pages\ListDailyIngredientUsages;
 use App\Filament\Resources\DailyIngredientUsageResource\Pages;
 use App\Models\DailyIngredientUsage;
+use App\Support\DemoAdminData;
+use App\Support\DemoAdminMode;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -33,6 +35,38 @@ class DailyIngredientUsageResource extends Resource
 
     public static function table(Table $table): Table
     {
+        if (DemoAdminMode::enabled()) {
+            return $table
+                ->columns([
+                    TextColumn::make('usage_date')
+                        ->label('Tanggal')
+                        ->date('d M Y')
+                        ->sortable(),
+                    TextColumn::make('ingredient_name')
+                        ->label('Bahan')
+                        ->searchable()
+                        ->sortable(),
+                    TextColumn::make('unit')
+                        ->label('Satuan')
+                        ->badge()
+                        ->sortable(),
+                    TextColumn::make('jumlah_digunakan')
+                        ->label('Jumlah Digunakan')
+                        ->numeric(decimalPlaces: 2)
+                        ->sortable(),
+                    TextColumn::make('created_at')
+                        ->label('Dicatat')
+                        ->dateTime('d M Y H:i')
+                        ->toggleable(isToggledHiddenByDefault: true)
+                        ->sortable(),
+                ])
+                ->records(fn (?string $search = null, ?string $sortColumn = null, ?string $sortDirection = null, int | string $page = 1, int | string $recordsPerPage = 10) => DemoAdminData::forTable('daily_ingredient_usages', $search, $sortColumn, $sortDirection, $page, $recordsPerPage))
+                ->filters([])
+                ->recordActions([])
+                ->toolbarActions([])
+                ->defaultSort('usage_date', 'desc');
+        }
+
         return $table
             ->columns([
                 TextColumn::make('usage_date')

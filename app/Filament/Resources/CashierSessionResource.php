@@ -2,24 +2,23 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Schemas\Schema;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\TextInput;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\Filter;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use App\Filament\Resources\CashierSessionResource\Pages\ListCashierSessions;
 use App\Filament\Resources\CashierSessionResource\Pages\CreateCashierSession;
 use App\Filament\Resources\CashierSessionResource\Pages\EditCashierSession;
-use App\Filament\Resources\CashierSessionResource\Pages;
+use App\Filament\Resources\CashierSessionResource\Pages\ListCashierSessions;
 use App\Models\CashierSession;
-use Filament\Forms;
+use App\Support\DemoAdminData;
+use App\Support\DemoAdminMode;
+use Filament\Schemas\Schema;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 
 class CashierSessionResource extends Resource
@@ -69,6 +68,44 @@ class CashierSessionResource extends Resource
 
     public static function table(Table $table): Table
     {
+        if (DemoAdminMode::enabled()) {
+            return $table
+                ->columns([
+                    TextColumn::make('id')
+                        ->label('Session ID')
+                        ->sortable(),
+                    TextColumn::make('user.name')
+                        ->label('Cashier')
+                        ->sortable(),
+                    TextColumn::make('shift_start')
+                        ->label('Shift Start')
+                        ->dateTime('d M Y, H:i')
+                        ->sortable(),
+                    TextColumn::make('shift_end')
+                        ->label('Shift End')
+                        ->dateTime('d M Y, H:i')
+                        ->default('-'),
+                    TextColumn::make('status')
+                        ->label('Status')
+                        ->badge()
+                        ->color(fn (string $state): string => $state === 'Active' ? 'success' : 'gray'),
+                    TextColumn::make('total_sales')
+                        ->label('Total Sales')
+                        ->money('IDR')
+                        ->sortable(),
+                    TextColumn::make('total_transactions')
+                        ->label('Transactions')
+                        ->sortable(),
+                    TextColumn::make('duration')
+                        ->label('Duration (hours)'),
+                ])
+                ->records(fn (?string $search = null, ?string $sortColumn = null, ?string $sortDirection = null, int | string $page = 1, int | string $recordsPerPage = 10) => DemoAdminData::forTable('cashier_sessions', $search, $sortColumn, $sortDirection, $page, $recordsPerPage))
+                ->filters([])
+                ->recordActions([])
+                ->toolbarActions([])
+                ->defaultSort('shift_start', 'desc');
+        }
+
         return $table
             ->columns([
                 TextColumn::make('id')
@@ -128,6 +165,12 @@ class CashierSessionResource extends Resource
 
     public static function getPages(): array
     {
+        if (DemoAdminMode::enabled()) {
+            return [
+                'index' => ListCashierSessions::route('/'),
+            ];
+        }
+
         return [
             'index' => ListCashierSessions::route('/'),
             'create' => CreateCashierSession::route('/create'),

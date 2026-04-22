@@ -2,25 +2,24 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Schemas\Schema;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Textarea;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use App\Filament\Resources\IncomeResource\Pages\ListIncomes;
 use App\Filament\Resources\IncomeResource\Pages\CreateIncome;
 use App\Filament\Resources\IncomeResource\Pages\EditIncome;
-use App\Filament\Resources\IncomeResource\Pages;
+use App\Filament\Resources\IncomeResource\Pages\ListIncomes;
 use App\Models\Income;
-use Filament\Forms;
+use App\Support\DemoAdminData;
+use App\Support\DemoAdminMode;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
 class IncomeResource extends Resource
@@ -74,6 +73,41 @@ class IncomeResource extends Resource
 
     public static function table(Table $table): Table
     {
+        if (DemoAdminMode::enabled()) {
+            return $table
+                ->columns([
+                    TextColumn::make('date')
+                        ->label('Date')
+                        ->date('d M Y')
+                        ->sortable(),
+                    TextColumn::make('source')
+                        ->label('Source')
+                        ->sortable(),
+                    TextColumn::make('category')
+                        ->label('Category')
+                        ->badge()
+                        ->formatStateUsing(fn (string $state): string => ucfirst($state))
+                        ->color(fn (string $state): string => match ($state) {
+                            'sales' => 'success',
+                            'services' => 'info',
+                            'investment' => 'warning',
+                            default => 'gray',
+                        }),
+                    TextColumn::make('amount')
+                        ->label('Amount')
+                        ->money('IDR')
+                        ->sortable(),
+                    TextColumn::make('description')
+                        ->label('Description')
+                        ->limit(50),
+                ])
+                ->records(fn (?string $search = null, ?string $sortColumn = null, ?string $sortDirection = null, int | string $page = 1, int | string $recordsPerPage = 10) => DemoAdminData::forTable('incomes', $search, $sortColumn, $sortDirection, $page, $recordsPerPage))
+                ->filters([])
+                ->recordActions([])
+                ->toolbarActions([])
+                ->defaultSort('date', 'desc');
+        }
+
         return $table
             ->columns([
                 TextColumn::make('date')
@@ -128,6 +162,12 @@ class IncomeResource extends Resource
 
     public static function getPages(): array
     {
+        if (DemoAdminMode::enabled()) {
+            return [
+                'index' => ListIncomes::route('/'),
+            ];
+        }
+
         return [
             'index' => ListIncomes::route('/'),
             'create' => CreateIncome::route('/create'),

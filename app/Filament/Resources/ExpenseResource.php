@@ -2,25 +2,24 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Schemas\Schema;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Textarea;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use App\Filament\Resources\ExpenseResource\Pages\ListExpenses;
 use App\Filament\Resources\ExpenseResource\Pages\CreateExpense;
 use App\Filament\Resources\ExpenseResource\Pages\EditExpense;
-use App\Filament\Resources\ExpenseResource\Pages;
+use App\Filament\Resources\ExpenseResource\Pages\ListExpenses;
 use App\Models\Expense;
-use Filament\Forms;
+use App\Support\DemoAdminData;
+use App\Support\DemoAdminMode;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
 class ExpenseResource extends Resource
@@ -88,6 +87,46 @@ class ExpenseResource extends Resource
 
     public static function table(Table $table): Table
     {
+        if (DemoAdminMode::enabled()) {
+            return $table
+                ->columns([
+                    TextColumn::make('date')
+                        ->label('Date')
+                        ->date('d M Y')
+                        ->sortable(),
+                    TextColumn::make('vendor')
+                        ->label('Vendor')
+                        ->sortable(),
+                    TextColumn::make('category')
+                        ->label('Category')
+                        ->badge()
+                        ->formatStateUsing(fn (string $state): string => ucfirst(str_replace('_', ' ', $state)))
+                        ->color(fn (string $state): string => match ($state) {
+                            'inventory' => 'warning',
+                            'utilities' => 'info',
+                            'salary' => 'success',
+                            'rent' => 'danger',
+                            'marketing' => 'purple',
+                            default => 'gray',
+                        }),
+                    TextColumn::make('amount')
+                        ->label('Amount')
+                        ->money('IDR')
+                        ->sortable(),
+                    TextColumn::make('payment_method')
+                        ->label('Payment Method')
+                        ->formatStateUsing(fn (?string $state): string => $state ? ucfirst(str_replace('_', ' ', $state)) : '-'),
+                    TextColumn::make('description')
+                        ->label('Description')
+                        ->limit(50),
+                ])
+                ->records(fn (?string $search = null, ?string $sortColumn = null, ?string $sortDirection = null, int | string $page = 1, int | string $recordsPerPage = 10) => DemoAdminData::forTable('expenses', $search, $sortColumn, $sortDirection, $page, $recordsPerPage))
+                ->filters([])
+                ->recordActions([])
+                ->toolbarActions([])
+                ->defaultSort('date', 'desc');
+        }
+
         return $table
             ->columns([
                 TextColumn::make('date')
@@ -159,6 +198,12 @@ class ExpenseResource extends Resource
 
     public static function getPages(): array
     {
+        if (DemoAdminMode::enabled()) {
+            return [
+                'index' => ListExpenses::route('/'),
+            ];
+        }
+
         return [
             'index' => ListExpenses::route('/'),
             'create' => CreateExpense::route('/create'),

@@ -2,6 +2,8 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Auth\DemoLogin;
+use App\Http\Middleware\DemoAdminSessionAuth;
 use Filament\Pages\Dashboard;
 use Filament\Widgets\AccountWidget;
 use Filament\Http\Middleware\Authenticate;
@@ -27,7 +29,7 @@ class AdminPanelProvider extends PanelProvider
         return $panel
             ->id('admin')
             ->path('admin')
-            ->login()
+            ->login(DemoLogin::class)
             ->authGuard('admin')
             ->colors([
                 'primary' => Color::Indigo,
@@ -53,6 +55,7 @@ class AdminPanelProvider extends PanelProvider
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
+                DemoAdminSessionAuth::class,
                 AuthenticateSession::class,
                 ShareErrorsFromSession::class,
                 VerifyCsrfToken::class,

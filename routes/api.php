@@ -2,7 +2,12 @@
 
 use App\Http\Controllers\Customer\CustomerOrderController;
 use App\Http\Controllers\Customer\CustomerPaymentController;
+use App\Support\DemoAdminMode;
 use Illuminate\Support\Facades\Route;
+
+if (DemoAdminMode::enabled()) {
+	return;
+}
 
 // Customer order store (called via axios from Cart page)
 Route::post('/order', [CustomerOrderController::class, 'store'])->name('customer.order.store');

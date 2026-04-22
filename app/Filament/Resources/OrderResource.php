@@ -15,6 +15,8 @@ use App\Filament\Resources\OrderResource\Pages\ViewOrder;
 use App\Filament\Resources\OrderResource\Pages;
 use App\Filament\Resources\OrderResource\RelationManagers;
 use App\Models\Order;
+use App\Support\DemoAdminData;
+use App\Support\DemoAdminMode;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -96,6 +98,65 @@ class OrderResource extends Resource
 
     public static function table(Table $table): Table
     {
+        if (DemoAdminMode::enabled()) {
+            return $table
+                ->columns([
+                    TextColumn::make('order_code')
+                        ->label('Kode Pesanan')
+                        ->searchable()
+                        ->sortable()
+                        ->copyable(),
+                    TextColumn::make('customer_name')
+                        ->label('Pelanggan')
+                        ->searchable()
+                        ->default('Guest'),
+                    TextColumn::make('cashier.name')
+                        ->label('Kasir')
+                        ->searchable()
+                        ->default('-'),
+                    TextColumn::make('total_amount')
+                        ->label('Total')
+                        ->money('IDR')
+                        ->sortable(),
+                    TextColumn::make('payment_method')
+                        ->label('Metode')
+                        ->badge()
+                        ->formatStateUsing(fn (?string $state): string => match ($state) {
+                            'cash' => 'Tunai',
+                            'qris' => 'QRIS',
+                            'bayar_nanti' => 'Bayar Nanti',
+                            default => '-',
+                        }),
+                    TextColumn::make('status')
+                        ->label('Status')
+                        ->badge()
+                        ->color(fn (string $state): string => match ($state) {
+                            'pending' => 'warning',
+                            'diproses' => 'info',
+                            'selesai' => 'success',
+                            default => 'gray',
+                        })
+                        ->formatStateUsing(fn (string $state): string => match ($state) {
+                            'pending' => 'Pending',
+                            'diproses' => 'Diproses',
+                            'selesai' => 'Selesai',
+                            default => $state,
+                        }),
+                    IconColumn::make('is_paid')
+                        ->label('Lunas')
+                        ->boolean(),
+                    TextColumn::make('created_at')
+                        ->label('Tanggal')
+                        ->dateTime('d M Y, H:i')
+                        ->sortable(),
+                ])
+                ->records(fn (?string $search = null, ?string $sortColumn = null, ?string $sortDirection = null, int | string $page = 1, int | string $recordsPerPage = 10) => DemoAdminData::forTable('orders', $search, $sortColumn, $sortDirection, $page, $recordsPerPage))
+                ->filters([])
+                ->recordActions([])
+                ->toolbarActions([])
+                ->defaultSort('created_at', 'desc');
+        }
+
         return $table
             ->columns([
                 TextColumn::make('order_code')
@@ -183,6 +244,10 @@ class OrderResource extends Resource
 
     public static function getRelations(): array
     {
+        if (DemoAdminMode::enabled()) {
+            return [];
+        }
+
         return [
             ItemsRelationManager::class,
         ];
@@ -190,6 +255,12 @@ class OrderResource extends Resource
 
     public static function getPages(): array
     {
+        if (DemoAdminMode::enabled()) {
+            return [
+                'index' => ListOrders::route('/'),
+            ];
+        }
+
         return [
             'index' => ListOrders::route('/'),
             'view'  => ViewOrder::route('/{record}'),
@@ -198,6 +269,10 @@ class OrderResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
+        if (DemoAdminMode::enabled()) {
+            return DemoAdminData::navigationBadge('orders');
+        }
+
         return static::getModel()::whereDate('created_at', today())->count() ?: null;
     }
 

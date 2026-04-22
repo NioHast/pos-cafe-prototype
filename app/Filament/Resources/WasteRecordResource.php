@@ -18,6 +18,8 @@ use App\Filament\Resources\WasteRecordResource\Pages\CreateWasteRecord;
 use App\Filament\Resources\WasteRecordResource\Pages\EditWasteRecord;
 use App\Filament\Resources\WasteRecordResource\Pages;
 use App\Models\WasteRecord;
+use App\Support\DemoAdminData;
+use App\Support\DemoAdminMode;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -64,6 +66,45 @@ class WasteRecordResource extends Resource
 
     public static function table(Table $table): Table
     {
+        if (DemoAdminMode::enabled()) {
+            return $table
+                ->columns([
+                    TextColumn::make('id')
+                        ->label('ID')
+                        ->sortable(),
+                    TextColumn::make('ingredient.name')
+                        ->label('Ingredient')
+                        ->searchable()
+                        ->sortable(),
+                    TextColumn::make('quantity')
+                        ->label('Quantity')
+                        ->sortable()
+                        ->formatStateUsing(function (mixed $state, array $record): string {
+                            $unit = filled(data_get($record, 'ingredient.unit')) ? (' ' . data_get($record, 'ingredient.unit')) : '';
+
+                            return number_format((float) $state, 2) . $unit;
+                        }),
+                    TextColumn::make('reason')
+                        ->label('Reason')
+                        ->limit(50)
+                        ->tooltip(fn (array $record): ?string => $record['reason'] ?? null),
+                    TextColumn::make('recordedBy.name')
+                        ->label('Recorded By')
+                        ->default('-')
+                        ->searchable()
+                        ->sortable(),
+                    TextColumn::make('created_at')
+                        ->label('Date')
+                        ->dateTime()
+                        ->sortable(),
+                ])
+                ->records(fn (?string $search = null, ?string $sortColumn = null, ?string $sortDirection = null, int | string $page = 1, int | string $recordsPerPage = 10) => DemoAdminData::forTable('waste_records', $search, $sortColumn, $sortDirection, $page, $recordsPerPage))
+                ->filters([])
+                ->recordActions([])
+                ->toolbarActions([])
+                ->defaultSort('created_at', 'desc');
+        }
+
         return $table
             ->modifyQueryUsing(fn ($query) => $query->with(['ingredient', 'recordedBy']))
             ->columns([
@@ -115,6 +156,12 @@ class WasteRecordResource extends Resource
 
     public static function getPages(): array
     {
+        if (DemoAdminMode::enabled()) {
+            return [
+                'index' => ListWasteRecords::route('/'),
+            ];
+        }
+
         return [
             'index' => ListWasteRecords::route('/'),
             'create' => CreateWasteRecord::route('/create'),

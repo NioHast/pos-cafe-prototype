@@ -2,25 +2,24 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\ReceivableResource\Pages\CreateReceivable;
+use App\Filament\Resources\ReceivableResource\Pages\EditReceivable;
+use App\Filament\Resources\ReceivableResource\Pages\ListReceivables;
+use App\Models\Receivable;
+use App\Support\DemoAdminData;
+use App\Support\DemoAdminMode;
 use Filament\Schemas\Schema;
-use Filament\Forms\Components\TextInput;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Resources\Resource;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use App\Filament\Resources\ReceivableResource\Pages\ListReceivables;
-use App\Filament\Resources\ReceivableResource\Pages\CreateReceivable;
-use App\Filament\Resources\ReceivableResource\Pages\EditReceivable;
-use App\Filament\Resources\ReceivableResource\Pages;
-use App\Models\Receivable;
-use Filament\Forms;
-use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
 
 class ReceivableResource extends Resource
@@ -86,6 +85,50 @@ class ReceivableResource extends Resource
 
     public static function table(Table $table): Table
     {
+        if (DemoAdminMode::enabled()) {
+            return $table
+                ->columns([
+                    TextColumn::make('customer_name')
+                        ->label('Customer')
+                        ->sortable(),
+                    TextColumn::make('invoice_date')
+                        ->label('Invoice Date')
+                        ->date('d M Y')
+                        ->sortable(),
+                    TextColumn::make('due_date')
+                        ->label('Due Date')
+                        ->date('d M Y')
+                        ->sortable(),
+                    TextColumn::make('amount')
+                        ->label('Amount')
+                        ->money('IDR')
+                        ->sortable(),
+                    TextColumn::make('paid_amount')
+                        ->label('Paid')
+                        ->money('IDR')
+                        ->sortable(),
+                    TextColumn::make('remaining_amount')
+                        ->label('Remaining')
+                        ->money('IDR')
+                        ->sortable(),
+                    TextColumn::make('status')
+                        ->label('Status')
+                        ->badge()
+                        ->color(fn (string $state): string => match ($state) {
+                            'paid' => 'success',
+                            'partial' => 'warning',
+                            'overdue' => 'danger',
+                            default => 'gray',
+                        })
+                        ->formatStateUsing(fn (string $state): string => ucfirst($state)),
+                ])
+                ->records(fn (?string $search = null, ?string $sortColumn = null, ?string $sortDirection = null, int | string $page = 1, int | string $recordsPerPage = 10) => DemoAdminData::forTable('receivables', $search, $sortColumn, $sortDirection, $page, $recordsPerPage))
+                ->filters([])
+                ->recordActions([])
+                ->toolbarActions([])
+                ->defaultSort('due_date', 'asc');
+        }
+
         return $table
             ->columns([
                 TextColumn::make('customer_name')
@@ -149,6 +192,12 @@ class ReceivableResource extends Resource
 
     public static function getPages(): array
     {
+        if (DemoAdminMode::enabled()) {
+            return [
+                'index' => ListReceivables::route('/'),
+            ];
+        }
+
         return [
             'index' => ListReceivables::route('/'),
             'create' => CreateReceivable::route('/create'),

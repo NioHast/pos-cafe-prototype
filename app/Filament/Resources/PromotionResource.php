@@ -2,33 +2,32 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Schemas\Schema;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Repeater;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TrashedFilter;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\RestoreAction;
-use Filament\Actions\ForceDeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ForceDeleteBulkAction;
-use App\Filament\Resources\PromotionResource\Pages\ListPromotions;
 use App\Filament\Resources\PromotionResource\Pages\CreatePromotion;
 use App\Filament\Resources\PromotionResource\Pages\EditPromotion;
-use App\Filament\Resources\PromotionResource\Pages;
+use App\Filament\Resources\PromotionResource\Pages\ListPromotions;
+use Filament\Schemas\Schema;
 use App\Models\Category;
 use App\Models\Menu;
 use App\Models\Promotion;
-use Filament\Forms;
+use App\Support\DemoAdminData;
+use App\Support\DemoAdminMode;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 
 class PromotionResource extends Resource
@@ -147,6 +146,66 @@ class PromotionResource extends Resource
 
     public static function table(Table $table): Table
     {
+        if (DemoAdminMode::enabled()) {
+            return $table
+                ->columns([
+                    TextColumn::make('name')
+                        ->label('Promotion Name')
+                        ->sortable(),
+                    TextColumn::make('type')
+                        ->label('Type')
+                        ->badge()
+                        ->color(fn (string $state): string => match ($state) {
+                            'percentage' => 'success',
+                            'fixed_amount' => 'info',
+                            'buy_x_get_y' => 'warning',
+                            'bundle' => 'danger',
+                            default => 'gray',
+                        }),
+                    TextColumn::make('discount_value')
+                        ->label('Discount')
+                        ->formatStateUsing(function (mixed $state, array $record): string {
+                            if (($record['type'] ?? null) === 'percentage') {
+                                return number_format((float) $state, 0, ',', '.') . '%';
+                            }
+
+                            return 'Rp ' . number_format((float) $state, 0, ',', '.');
+                        }),
+                    TextColumn::make('start_date')
+                        ->label('Start Date')
+                        ->date('d M Y')
+                        ->sortable(),
+                    TextColumn::make('end_date')
+                        ->label('End Date')
+                        ->date('d M Y')
+                        ->sortable(),
+                    TextColumn::make('status')
+                        ->label('Status')
+                        ->badge()
+                        ->color(fn (string $state): string => match ($state) {
+                            'scheduled' => 'warning',
+                            'active' => 'success',
+                            'inactive' => 'danger',
+                            'expired' => 'gray',
+                            default => 'gray',
+                        }),
+                    TextColumn::make('usage_count')
+                        ->label('Used')
+                        ->formatStateUsing(function (mixed $state, array $record): string {
+                            if (isset($record['usage_limit']) && ($record['usage_limit'] !== null)) {
+                                return (string) $state . ' / ' . $record['usage_limit'];
+                            }
+
+                            return (string) $state;
+                        }),
+                ])
+                ->records(fn (?string $search = null, ?string $sortColumn = null, ?string $sortDirection = null, int | string $page = 1, int | string $recordsPerPage = 10) => DemoAdminData::forTable('promotions', $search, $sortColumn, $sortDirection, $page, $recordsPerPage))
+                ->filters([])
+                ->recordActions([])
+                ->toolbarActions([])
+                ->defaultSort('start_date', 'desc');
+        }
+
         return $table
             ->columns([
                 TextColumn::make('name')
@@ -235,6 +294,12 @@ class PromotionResource extends Resource
 
     public static function getPages(): array
     {
+        if (DemoAdminMode::enabled()) {
+            return [
+                'index' => ListPromotions::route('/'),
+            ];
+        }
+
         return [
             'index' => ListPromotions::route('/'),
             'create' => CreatePromotion::route('/create'),

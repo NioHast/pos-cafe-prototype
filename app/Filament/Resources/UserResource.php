@@ -14,6 +14,8 @@ use App\Filament\Resources\UserResource\Pages\CreateUser;
 use App\Filament\Resources\UserResource\Pages\EditUser;
 use App\Filament\Resources\UserResource\Pages;
 use App\Models\User;
+use App\Support\DemoAdminData;
+use App\Support\DemoAdminMode;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -72,6 +74,46 @@ class UserResource extends Resource
 
     public static function table(Table $table): Table
     {
+        if (DemoAdminMode::enabled()) {
+            return $table
+                ->columns([
+                    TextColumn::make('name')
+                        ->label('Nama')
+                        ->searchable()
+                        ->sortable(),
+                    TextColumn::make('email')
+                        ->label('Email')
+                        ->searchable()
+                        ->sortable(),
+                    TextColumn::make('role')
+                        ->label('Role')
+                        ->badge()
+                        ->color(fn (string $state): string => match ($state) {
+                            'admin' => 'success',
+                            'cashier' => 'info',
+                            'customer' => 'warning',
+                            default => 'gray',
+                        })
+                        ->formatStateUsing(fn (string $state): string => match ($state) {
+                            'admin' => 'Admin',
+                            'cashier' => 'Kasir',
+                            'customer' => 'Pelanggan',
+                            default => $state,
+                        })
+                        ->sortable(),
+                    TextColumn::make('created_at')
+                        ->label('Terdaftar')
+                        ->dateTime('d M Y')
+                        ->sortable()
+                        ->toggleable(isToggledHiddenByDefault: true),
+                ])
+                ->records(fn (?string $search = null, ?string $sortColumn = null, ?string $sortDirection = null, int | string $page = 1, int | string $recordsPerPage = 10) => DemoAdminData::forTable('users', $search, $sortColumn, $sortDirection, $page, $recordsPerPage))
+                ->filters([])
+                ->recordActions([])
+                ->toolbarActions([])
+                ->defaultSort('created_at', 'desc');
+        }
+
         return $table
             ->columns([
                 TextColumn::make('name')
@@ -127,6 +169,12 @@ class UserResource extends Resource
 
     public static function getPages(): array
     {
+        if (DemoAdminMode::enabled()) {
+            return [
+                'index' => ListUsers::route('/'),
+            ];
+        }
+
         return [
             'index'  => ListUsers::route('/'),
             'create' => CreateUser::route('/create'),

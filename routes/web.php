@@ -9,8 +9,15 @@ use App\Http\Controllers\Cashier\CashierOrderController;
 use App\Http\Controllers\Cashier\CashierPesananAktifController;
 use App\Http\Controllers\Cashier\CashierPesananBaruController;
 use App\Http\Controllers\Cashier\CashierRiwayatController;
+use App\Support\DemoAdminMode;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+
+if (DemoAdminMode::enabled()) {
+    Route::redirect('/', '/admin');
+
+    return;
+}
 
 Route::get('/', fn() => redirect()->route('login'));
 
