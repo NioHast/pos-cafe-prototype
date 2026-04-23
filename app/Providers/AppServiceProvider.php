@@ -25,5 +25,9 @@ class AppServiceProvider extends ServiceProvider
     {
         MenuIngredient::observe(MenuIngredientObserver::class);
         WasteRecord::observe(WasteRecordObserver::class);
+        
+        if (config('app.env') !== 'local') {
+        URL::forceScheme('https');
+        }
     }
 }
