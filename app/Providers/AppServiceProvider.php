@@ -7,6 +7,7 @@ use App\Models\WasteRecord;
 use App\Observers\MenuIngredientObserver;
 use App\Observers\WasteRecordObserver;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
