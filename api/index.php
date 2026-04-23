@@ -5,32 +5,16 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
-// --- TAMBAHKAN LOGIKA INI UNTUK VERCEL ---
-// Membuat folder sementara di RAM Vercel agar Laravel bisa menulis cache/views
-$storageFolders = [
-    '/tmp/storage/framework/views',
-    '/tmp/storage/framework/sessions',
-    '/tmp/storage/framework/cache',
-    '/tmp/storage/logs',
-];
-
-foreach ($storageFolders as $folder) {
-    if (!is_dir($folder)) {
-        mkdir($folder, 0755, true);
-    }
-}
-
-// Paksa Laravel menggunakan folder /tmp ini
-putenv('APP_STORAGE=/tmp/storage');
-putenv('VIEW_COMPILED_PATH=/tmp/storage/framework/views');
-// ----------------------------------------
-
+// Determine if the application is in maintenance mode...
 if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php')) {
     require $maintenance;
 }
 
+// Register the Composer autoloader...
 require __DIR__.'/../vendor/autoload.php';
 
+// Bootstrap Laravel and handle the request...
+/** @var Application $app */
 $app = require_once __DIR__.'/../bootstrap/app.php';
 
 $app->handleRequest(Request::capture());
